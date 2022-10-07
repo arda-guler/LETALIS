@@ -1,5 +1,5 @@
-# LETALIS-LPRE_Thermal_Analysis
-LETALIS: Liquid Propellant Rocket Engine thermal analysis and cooling system design.
+# LETALIS: LPRE Thermal Analysis
+Liquid Propellant Rocket Engine thermal analysis and cooling system design.
 
 Work on the cooling algorithms is not completed.
 - **Heating calculations** give satisfactorily verifiable results nearly 100% of the time.
