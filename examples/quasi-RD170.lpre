@@ -1,0 +1,34 @@
+Engine Length 2.7702 m
+Combustion Chamber Diameter 387.77 mm
+Throat Diameter 240.483 mm
+Exit Diameter 1.46024 m
+Chamber Contraction Angle 30.0 deg
+Chamber Radius of Curvature 184.663 mm
+Nozzle Expansion (Half-)Angle 15.0 deg
+Throat Upstream Radius of Curvature 180.363 mm
+Throat Downstream Radius of Curvature 45.93 mm
+Number of Coolant Channels 97 # (unitless)
+Inner Wall Thickness (ribs excluded) 2.0 mm
+Coolant Channel Side Wall Width 1.0 mm
+Coolant Channel Radial Depth 3.2 mm
+Film Cooling Injection Point 0.0 mm
+Film Cooling Mass Flow 0.0 kg/s
+Combustion Chamber Mass Flow 2400.0 kg/s
+Chamber Pressure (p_c) 24.5 MPa
+Chamber Stagnation Temperature (T_c) 3857.0 K
+Characteristic Velocity (C*) 1235.9 m/s
+Gas Conductivity of Combustion Mixture 1.192 W/(m*K)
+Avg. Molecular Mass of Combustion Mix. 24.0059 g/mol
+Initial Wall Temperature 25.0 C
+Viscosity at Combustion Chamber 1.173 millipoise
+Gamma at Combustion Chamber 1.1832 # (unitless)
+Viscosity at Throat 1.129 millipoise
+Gamma at Throat 1.174 # (unitless)
+Inner Wall Material CCZ [Material]
+Outer Shell Material SS [Material]
+Coolant Fluid Jet_A1 [Material]
+Coolant Mass Flow Rate 240.0 kg/s
+Coolant Manifold Temperature 25.0 C
+Analysis Vertical Fineness 300 # (unitless)
+Analysis End Time 30.0 s
+Time Steps 0.002 s
