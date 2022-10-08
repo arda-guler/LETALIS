@@ -7,7 +7,7 @@ Chamber Radius of Curvature 184.663 mm
 Nozzle Expansion (Half-)Angle 15.0 deg
 Throat Upstream Radius of Curvature 180.363 mm
 Throat Downstream Radius of Curvature 45.93 mm
-Number of Coolant Channels 97 # (unitless)
+Number of Coolant Channels 97 (unitless)
 Inner Wall Thickness (ribs excluded) 2.0 mm
 Coolant Channel Side Wall Width 1.0 mm
 Coolant Channel Radial Depth 3.2 mm
@@ -21,14 +21,15 @@ Gas Conductivity of Combustion Mixture 1.192 W/(m*K)
 Avg. Molecular Mass of Combustion Mix. 24.0059 g/mol
 Initial Wall Temperature 25.0 C
 Viscosity at Combustion Chamber 1.173 millipoise
-Gamma at Combustion Chamber 1.1832 # (unitless)
+Gamma at Combustion Chamber 1.1832 (unitless)
 Viscosity at Throat 1.129 millipoise
-Gamma at Throat 1.174 # (unitless)
+Gamma at Throat 1.174 (unitless)
 Inner Wall Material CCZ [Material]
 Outer Shell Material SS [Material]
 Coolant Fluid Jet_A1 [Material]
 Coolant Mass Flow Rate 240.0 kg/s
 Coolant Manifold Temperature 25.0 C
+Coolant Manifold Pressure 30.0 MPa
 Analysis Vertical Fineness 300 # (unitless)
-Analysis End Time 30.0 s
-Time Steps 0.002 s
+Analysis End Time 15.0 s
+Time Steps 0.001 s

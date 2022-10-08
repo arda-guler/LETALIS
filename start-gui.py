@@ -262,6 +262,7 @@ create_entry("Outer Shell Material", material_unit, "string")
 create_entry("Coolant Fluid", material_unit, "string")
 create_entry("Coolant Mass Flow Rate", mass_flow_units, "float")
 create_entry("Coolant Manifold Temperature", temperature_units, "float")
+create_entry("Coolant Manifold Pressure", pressure_units, "float")
 
 create_label("Analysis Setup")
 create_entry("Analysis Vertical Fineness", no_unit, "int")

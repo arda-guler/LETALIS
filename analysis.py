@@ -93,11 +93,12 @@ def perform(params, config_filename=None, getchar=True):
     mtl_clt = get_material_by_name(params[28])
     mdot_clt = params[29]/n_cochan # kg s-1 (per channel)
     T_clt = params[30] # manifold coolant temp. K
+    P_clt = params[31] # manifold coolant press. Pa
 
     # - - - ANALYSIS - - -
-    fineness_vertical = params[31]
-    time_end = params[32] # s
-    time_step = params[33] # s
+    fineness_vertical = params[32]
+    time_end = params[33] # s
+    time_step = params[34] # s
     n_steps = int(time_end/time_step)
 
     # calculate engine geometry
@@ -159,6 +160,7 @@ def perform(params, config_filename=None, getchar=True):
     xs = []
     cylinder_temps = []
     coolant_temps = []
+    coolant_presses = []
     Reynolds = []
     Nusselts = []
     T_gases = []
@@ -174,6 +176,8 @@ def perform(params, config_filename=None, getchar=True):
     T_films = []
     rT_layers_plot = []
     T_effectives = []
+    coolant_press_drops = []
+    total_clt_press_drops = []
         
     time = 0
     j = 0
@@ -188,6 +192,7 @@ def perform(params, config_filename=None, getchar=True):
             Q_outs.append([])
             cylinder_temps.append([])
             coolant_temps.append([])
+            coolant_presses.append([])
             Reynolds.append([])
             Nusselts.append([])
             h_gs.append([])
@@ -196,10 +201,13 @@ def perform(params, config_filename=None, getchar=True):
             clt_vels.append([])
             rT_layers_plot.append([])
             T_effectives.append([])
+            coolant_press_drops.append([])
             Q_in_full = 0
             Q_out_full = 0
+            total_clt_press_drop = 0
 
         T_clt_current = T_clt # revert to manifold temperature
+        P_clt_current = P_clt # revert to manifold pressure
         film_exists = False
         mdot_clt_current = mdot_clt # revert to manifold mass flow
 
@@ -352,6 +360,20 @@ def perform(params, config_filename=None, getchar=True):
                 # compute Nusselt number (Dittus Boelter)
                 Pr_clt = mtl_clt.get_specific_heat(T_clt) * mtl_clt.get_viscosity(T_clt) / mtl_clt.get_thermal_conductivity(T_clt)
                 Nusselt_num = 0.023 * Reynolds_num**0.8 * Pr_clt**0.3
+
+                # compute coolant pressure drop and update pressures
+                epsilon_f = 1
+                
+                if Reynolds_num <= 2320:
+                    friction_loss_coeff = (64/Reynolds_num) * epsilon_f
+                elif Reynolds_num < 10E5:
+                    friction_loss_coeff = (0.3164/(Reynolds_num**(1/4))) * epsilon_f
+                else:
+                    friction_loss_coeff = (0.0032 + (0.221/(Reynolds_num**(0.237)))) * epsilon_f
+                    
+                coolant_press_drop = friction_loss_coeff * (cy.h/D_hydro) * mtl_clt.get_density(T_clt_current) * ((clt_vel**2)/2)
+                P_clt_current -= coolant_press_drop
+                total_clt_press_drop += coolant_press_drop
                     
             else:
                 h_l = 0
@@ -368,6 +390,7 @@ def perform(params, config_filename=None, getchar=True):
                 T_clt_current += 0
                 Pr_clt = 0
                 Nusselt_num = 0
+                coolant_press_drop = 0
                 
             # record data for plotting
             if t_step == 0:
@@ -383,6 +406,7 @@ def perform(params, config_filename=None, getchar=True):
                 Q_outs[j].insert(0, Q_out/time_step) # convert to W
                 cylinder_temps[j].insert(0, cy.T - 273) # convert to celcius
                 coolant_temps[j].insert(0, T_clt_current - 273) # convert to celcius
+                coolant_presses[j].insert(0, P_clt_current)
                 Reynolds[j].insert(0, Reynolds_num)
                 Nusselts[j].insert(0, Nusselt_num)
                 h_gs[j].insert(0, h_g)
@@ -390,10 +414,12 @@ def perform(params, config_filename=None, getchar=True):
                 clt_vels[j].insert(0, clt_vel)
                 rT_layers_plot[j].insert(0, rT_layers[i_cylinder_regen])
                 T_effectives[j].insert(0, T_effective)
+                coolant_press_drops[j].insert(0, coolant_press_drop)
 
         if t_step % 100 == 0:
             Q_in_fulls.append(Q_in_full)
             Q_out_fulls.append(Q_out_full)
+            total_clt_press_drops.append(total_clt_press_drop)
 
         # proceed to next time step
         time += time_step
@@ -407,10 +433,11 @@ def perform(params, config_filename=None, getchar=True):
             print("Current analysis:")
             print(generate_progress_bar((t_step/n_steps) * 100))
 
-    plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts,
+    plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts,
               T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
-              L_max_chan_width, engine_lengths, vis_model, mdot_clts, T_films, rT_layers_plot, T_effectives, config_filename)
+              L_max_chan_width, engine_lengths, vis_model, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
+              total_clt_press_drops, config_filename)
 
     if getchar:
         qc = input("Press Enter to move on...")

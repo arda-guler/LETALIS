@@ -4,10 +4,11 @@ import os
 import matplotlib.pyplot as plt
 import shutil
 
-def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases,
+def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases,
               h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
-              L_max_chan_width, engine_lengths, vis_model, mdot_clts, T_films, rT_layers_plot, T_effectives, filename=None):
+              L_max_chan_width, engine_lengths, vis_model, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
+              total_clt_press_drops, filename=None):
 
     # PRINT TOTAL Q
     Q_in_total = 0
@@ -33,9 +34,11 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
     
     num_frames = len(cylinder_temps)
     fig, ax = plt.subplots()
+    plotnum = 0
 
     # WALL TEMP. PLOT
-    plt.figure(1)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -55,7 +58,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
     
     # COOLANT TEMP. PLOT
     _, ax = plt.subplots()
-    plt.figure(2)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -73,9 +77,29 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
     ax.set_xlabel("Position (m)")
     ax2.set_ylabel("Temperature (C)")
 
+    # COOLANT PRESS. PLOT
+    _, ax = plt.subplots()
+    plotnum += 1
+    plt.figure(plotnum)
+
+    ax2 = ax.twinx()
+    plot_engine_contour(ax)
+    ax2.set_aspect("auto")
+    ax2.yaxis.set_label_position("left")
+    ax2.yaxis.tick_left()
+
+    for i in range(0, num_frames, int(num_frames/10)):
+        ax2.plot(xs, coolant_presses[i])
+
+    plt.grid()
+    plt.title("Coolant Pressure")
+    ax.set_xlabel("Position (m)")
+    ax2.set_ylabel("Pressure (Pa)")
+
     # HEAT PLOT
     _, ax = plt.subplots()
-    plt.figure(3)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -94,7 +118,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # HEAT PER AREA PLOT
     _, ax = plt.subplots()
-    plt.figure(4)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -112,7 +137,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # REYNOLDS NUMBER PLOT
     _, ax = plt.subplots()
-    plt.figure(5)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -130,7 +156,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # NUSSELT NUMBER PLOT
     _, ax = plt.subplots()
-    plt.figure(6)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -148,7 +175,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # COMBUSTION GAS TEMP. PLOT
     _, ax = plt.subplots()
-    plt.figure(7)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -165,7 +193,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # GAS CONVECTION COEFF. PLOT
     _, ax = plt.subplots()
-    plt.figure(8)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -183,7 +212,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # LIQUID FILM COEFF. PLOT
     _, ax = plt.subplots()
-    plt.figure(9)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -201,7 +231,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # COOLANT VELOCITY PLOT
     _, ax = plt.subplots()
-    plt.figure(10)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -219,7 +250,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # TOTAL Q IN PLOT
     _, ax = plt.subplots()
-    plt.figure(11)
+    plotnum += 1
+    plt.figure(plotnum)
 
     plt.plot(Q_in_fulls)
 
@@ -230,7 +262,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # TOTAL Q OUT PLOT
     _, ax = plt.subplots()
-    plt.figure(12)
+    plotnum += 1
+    plt.figure(plotnum)
 
     plt.plot(Q_out_fulls)
 
@@ -268,7 +301,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # ENGINE GEOMETRY
     _, ax = plt.subplots()
-    plt.figure(13)
+    plotnum += 1
+    plt.figure(plotnum)
 
     plt.axes().set_aspect('equal')
     plt.plot(geom_x, geom_y)
@@ -284,7 +318,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # FLOW AREA
     _, ax = plt.subplots()
-    plt.figure(14)
+    plotnum += 1
+    plt.figure(plotnum)
     plt.plot(xs, flow_areas)
     plt.grid()
     plt.title("Coolant Flow Area")
@@ -293,7 +328,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # WET PERIMETER
     _, ax = plt.subplots()
-    plt.figure(15)
+    plotnum += 1
+    plt.figure(plotnum)
     plt.plot(xs, wet_perimeters)
     plt.grid()
     plt.title("Wet Perimeter")
@@ -302,7 +338,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # HYDRAULIC DIAMETERS
     _, ax = plt.subplots()
-    plt.figure(16)
+    plotnum += 1
+    plt.figure(plotnum)
     plt.plot(xs, D_hydros)
     plt.grid()
     plt.title("Hydraulic Diameter")
@@ -311,7 +348,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # COOLANT MDOT PLOT
     _, ax = plt.subplots()
-    plt.figure(17)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -328,7 +366,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # FILM TEMPERATURE PLOT
     _, ax = plt.subplots()
-    plt.figure(18)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -346,7 +385,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # LAYER RATIO PLOT
     _, ax = plt.subplots()
-    plt.figure(19)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -364,7 +404,8 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
 
     # EFFECTIVE TEMP. PLOT
     _, ax = plt.subplots()
-    plt.figure(20)
+    plotnum += 1
+    plt.figure(plotnum)
 
     ax2 = ax.twinx()
     plot_engine_contour(ax)
@@ -379,6 +420,37 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
     plt.title("Effective Temp.")
     ax.set_xlabel("Position (m)")
     ax2.set_ylabel("Effective Temp. (K)")
+
+    # COOLANT PRESS. DROP PLOT
+    _, ax = plt.subplots()
+    plotnum += 1
+    plt.figure(plotnum)
+
+    ax2 = ax.twinx()
+    plot_engine_contour(ax)
+    ax2.set_aspect("auto")
+    ax2.yaxis.set_label_position("left")
+    ax2.yaxis.tick_left()
+
+    for i in range(0, num_frames, int(num_frames/10)):
+        ax2.plot(xs, coolant_press_drops[i])
+
+    plt.grid()
+    plt.title("Coolant Pressure Drop")
+    ax.set_xlabel("Position (m)")
+    ax2.set_ylabel("Pressure Drop")
+
+    # TOTAL COOLANT PRESS. DROP PLOT
+    _, ax = plt.subplots()
+    plotnum += 1
+    plt.figure(plotnum)
+
+    plt.plot(total_clt_press_drops)
+
+    plt.grid()
+    plt.title("Total Coolant Pressure Drop")
+    plt.xlabel("Time")
+    plt.ylabel("Total Coolant Pressure Drop (Pa)")
 
     print("")
 
@@ -433,7 +505,7 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
         print("WARNING: Could not copy modelviewer utility to analysis folder.")
 
     try:
-        for i in range(1, 21):
+        for i in range(1, plotnum + 1):
             new_fig = plt.figure(i)
             save_str = folder_name + "/figure_" + str(i) + ".png"
             new_fig.savefig(save_str)
@@ -445,7 +517,7 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, Q_ins, Q_in_per_area
     print("Figures exported successfully!")
     
     print("Clearing figures from memory...")
-    for i in range(1, 21):
+    for i in range(1, plotnum + 1):
         new_fig = plt.figure(i)
         new_fig.clear()
         plt.close()
