@@ -2,6 +2,7 @@ import math
 pi = math.pi
 
 from material import SS304L, CuCrZr
+from bell_nozzle import *
 
 def get_area_of_sector(r_in, r_out, angle):
     return pi * (r_out**2 - r_in**2) * (angle/360)
@@ -216,7 +217,7 @@ def calculate_geometry(L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm,
             x6.append(x_current)
             y6.append(y_current)
 
-        i += L_engine/1000
+        i += x_step
 
     geom_x = x1 + x2 + x3 + x4 + x5 + x6
     geom_y = y1 + y2 + y3 + y4 + y5 + y6
@@ -230,6 +231,151 @@ def calculate_geometry(L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm,
     ## plt.plot(x6, y6)
     ## plt.show()
 
+    return geom_x, geom_y, x_step, [L1, L2, L3, L4, L5, L6, L7]
+
+# L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp, fineness
+# D_throat, D_exit, length_percent=80, theta_n=None, theta_e=None, x_fine=None, t_fine=None)
+def calculate_geometry_bell(L_engine, D_chm, D_thrt, D_exit, ROC_chm, a_chmContract,
+                            fineness, length_percent=80, theta_n=None, theta_e=None, x_fine=None, t_fine=None):
+    global pi
+    
+    def arc_diff(R, theta):
+        
+        if theta > 2*pi:
+            print("Func: arc_diff() -- Make sure theta is in radians!")
+            quit()
+            
+        # takes R in meters, theta in radians
+        # returns radius difference in meters
+        return R * (1 - math.cos(theta))
+
+    R_thrt = D_thrt/2
+    R_chm = D_chm/2
+    R_exit = D_exit/2
+    ROC_thrtUp = R_thrt * 1.5
+    ROC_thrtDn = R_thrt * 0.382
+    
+    # BELL NOZZLE CONTOUR (INLCUDING THROAT UPSTREAM)
+    bell_x, bell_y = compute_bell_geometry(D_thrt, D_exit, length_percent, a_chmContract, theta_n, theta_e, x_fine, t_fine)
+    L_bellNozzle = bell_x[-1] - bell_x[0]
+
+    # CHAMBER CONTRACTION CURVE
+    
+    R = ROC_chm # temporary variable to keep the code short (m)
+    theta = math.radians(a_chmContract) # temporary variable to keep the code short (radians)
+    L_chamber_contract_curve = R * math.sin(theta) # m
+    R_chamber_contract_cone_max = R_chm - arc_diff(R, theta) # m
+
+    R = ROC_thrtUp # m
+    theta = math.radians(a_chmContract) # radians
+    R_chamber_contract_cone_min = R_thrt + arc_diff(R, theta) # m
+    L_nzl_upstream_curve = R * math.sin(theta)
+
+    L_chm_contract_cone = (R_chamber_contract_cone_max - R_chamber_contract_cone_min) * (1/math.tan(theta)) ## change
+    L_chm_contract_total = L_chamber_contract_curve + L_chm_contract_cone
+
+    # CHAMBER
+    
+    L_chm_cylinder = L_engine - L_bellNozzle - L_chm_contract_total
+    x_zero = bell_x[-1] - L_engine
+
+    # NOZZLE DOWNSTREAM
+    R = ROC_thrtDn # m
+    theta = math.radians(theta_n) # radians
+    L_nzl_downstream_curve = R * math.sin(theta)
+
+    # L LENGTHS
+
+    L1 = 0
+    L2 = L_chm_cylinder
+    L3 = L_chm_cylinder + L_chamber_contract_curve
+    L4 = L_chm_cylinder + L_chamber_contract_curve + L_chm_contract_cone
+    L5 = L_chm_cylinder + L_chamber_contract_curve + L_chm_contract_cone + L_nzl_upstream_curve
+    L6 = L_chm_cylinder + L_chamber_contract_curve + L_chm_contract_cone + L_nzl_upstream_curve + L_nzl_downstream_curve
+    L7 = L_engine
+
+    bell_x_adjusted = []
+    for x_ent in bell_x:
+        bell_x_adjusted.append(x_ent - x_zero)
+
+    # = = = GENERATE STATIONS = = =
+    x1 = []
+    y1 = []
+
+    x2 = []
+    y2 = []
+
+    x3 = []
+    y3 = []
+
+    x4 = []
+    y4 = []
+
+    x5 = []
+    y5 = []
+
+    x6 = []
+    y6 = []
+
+    x_step = L_engine/fineness
+    
+    i = x_zero
+    while i < L_engine:
+        x_current = i
+
+        # cylindrical combustion chamber segment
+        if L1 <= i <= L2:
+            y_current = R_chm
+            x1.append(x_current)
+            y1.append(y_current)
+
+        # combustion chamber curving inwards
+        elif L2 < i <= L3:
+            theta = math.asin((i - L2) / ROC_chm)
+            y_current = R_chm - arc_diff(ROC_chm, theta)
+            x2.append(x_current)
+            y2.append(y_current)
+
+        # combustion chamber contraction with constant angle
+        elif L3 < i <= L4:
+            y_current = (R_chamber_contract_cone_max - R_chamber_contract_cone_min) * ((L4 - i)/(L4 - L3)) + R_chamber_contract_cone_min
+            x3.append(x_current)
+            y3.append(y_current)
+
+        elif L4 < i:
+            y_current = get_parabola_y_at(x_current, bell_x_adjusted, bell_y)
+            x4.append(x_current)
+            y4.append(y_current)
+
+##        # nozzle upstream curve
+##        elif L4 < i <= L5:
+##            theta = math.asin(((L5 - i)/ROC_thrtUp))
+##            y_current = R_thrt + arc_diff(ROC_thrtUp, theta)
+##            x4.append(x_current)
+##            y4.append(y_current)
+##
+##        # nozzle downstream curve
+##        elif L5 < i <= L6:
+##            theta = math.asin((i - L5)/ROC_thrtDn)
+##            y_current = R_thrt + arc_diff(ROC_thrtDn, theta)
+##            x5.append(x_current)
+##            y5.append(y_current)
+##
+##        # nozzle cone
+##        elif L6 < i <= L7:
+##            y_current = R_nzl_downstream_curve_max + (R_exit - R_nzl_downstream_curve_max) * ((i - L6)/L_nzl_cone)
+##            x6.append(x_current)
+##            y6.append(y_current)
+
+        i += x_step
+
+    geom_x = x1 + x2 + x3 + x4# + x5 + x6
+    geom_y = y1 + y2 + y3 + y4# + y5 + y6
+
+##    plt.plot(geom_x, geom_y)
+##    plt.axis('equal')
+##    plt.show()
+    
     return geom_x, geom_y, x_step, [L1, L2, L3, L4, L5, L6, L7]
 
 # The function below is basically a copy of the calculate_geometry() function but
@@ -340,6 +486,88 @@ def get_inner_radius_at(x, L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_c
 
     return y_current # meters
 
+def get_inner_radius_at_bell(x, L_engine, D_chm, D_thrt, D_exit, ROC_chm, a_chmContract, length_percent=80, theta_n=None, theta_e=None):
+    global pi
+    
+    def arc_diff(R, theta):
+        
+        if theta > 2*pi:
+            print("Func: arc_diff() -- Make sure theta is in radians!")
+            quit()
+            
+        # takes R in meters, theta in radians
+        # returns radius difference in meters
+        return R * (1 - math.cos(theta))
+
+    R_thrt = D_thrt/2
+    R_chm = D_chm/2
+    R_exit = D_exit/2
+    ROC_thrtUp = R_thrt * 1.5
+    ROC_thrtDn = R_thrt * 0.382
+    
+    # BELL NOZZLE CONTOUR (INLCUDING THROAT UPSTREAM)
+
+    bell_x, bell_y = compute_bell_geometry(D_thrt, D_exit, length_percent, a_chmContract, theta_n, theta_e, 100, 1000)
+    L_bellNozzle = bell_x[-1] - bell_x[0]
+
+    # CHAMBER CONTRACTION CURVE
+    
+    R = ROC_chm # temporary variable to keep the code short (m)
+    theta = math.radians(a_chmContract) # temporary variable to keep the code short (radians)
+    L_chamber_contract_curve = R * math.sin(theta) # m
+    R_chamber_contract_cone_max = R_chm - arc_diff(R, theta) # m
+
+    R = ROC_thrtUp # m
+    theta = math.radians(a_chmContract) # radians
+    R_chamber_contract_cone_min = R_thrt + arc_diff(R, theta) # m
+    L_nzl_upstream_curve = R * math.sin(theta)
+
+    L_chm_contract_cone = (R_chamber_contract_cone_max - R_chamber_contract_cone_min) * (1/math.tan(theta)) ## change
+    L_chm_contract_total = L_chamber_contract_curve + L_chm_contract_cone
+
+    # CHAMBER
+    
+    L_chm_cylinder = L_engine - L_bellNozzle - L_chm_contract_total
+    x_zero = bell_x[-1] - L_engine
+
+    # NOZZLE DOWNSTREAM
+    R = ROC_thrtDn # m
+    theta = math.radians(theta_n) # radians
+    L_nzl_downstream_curve = R * math.sin(theta)
+
+    # L LENGTHS
+
+    L1 = 0
+    L2 = L_chm_cylinder
+    L3 = L_chm_cylinder + L_chamber_contract_curve
+    L4 = L_chm_cylinder + L_chamber_contract_curve + L_chm_contract_cone
+    L5 = L_chm_cylinder + L_chamber_contract_curve + L_chm_contract_cone + L_nzl_upstream_curve
+    L6 = L_chm_cylinder + L_chamber_contract_curve + L_chm_contract_cone + L_nzl_upstream_curve + L_nzl_downstream_curve
+    L7 = L_engine
+
+    bell_x_adjusted = []
+    for x_ent in bell_x:
+        bell_x_adjusted.append(x_ent - x_zero)
+
+    i = x
+    # cylindrical combustion chamber segment
+    if L1 <= i <= L2:
+        y_current = R_chm
+
+    # combustion chamber curving inwards
+    elif L2 < i <= L3:
+        theta = math.asin((i - L2) / ROC_chm)
+        y_current = R_chm - arc_diff(ROC_chm, theta)
+
+    # combustion chamber contraction with constant angle
+    elif L3 < i <= L4:
+        y_current = (R_chamber_contract_cone_max - R_chamber_contract_cone_min) * ((L4 - i)/(L4 - L3)) + R_chamber_contract_cone_min
+
+    elif L4 < i:
+        y_current = get_parabola_y_at(i, bell_x_adjusted, bell_y)
+    
+    return y_current
+
 # this one below isn't any rocket science
 def get_index_of_closest_num_in_list(x, lst):
     min_diff = None
@@ -350,6 +578,32 @@ def get_index_of_closest_num_in_list(x, lst):
             closest_index = i
         
     return closest_index
+
+def get_parabola_y_at(x, parabola_x, parabola_y):
+    bottom_x = None
+    bottom_x_diff = None
+    top_x = None
+    top_x_diff = None
+
+    for i in range(len(parabola_x)):
+        cx = parabola_x[i]
+        if x - cx == 0:
+            return parabola_y[i]
+        elif x - cx > 0 and (not bottom_x or bottom_x_diff > x - cx):
+            bottom_i = i
+            bottom_x = cx
+            bottom_x_diff = x - cx
+        elif cx - x > 0 and (not top_x or top_x_diff > cx - x):
+            top_i = i
+            top_x = cx
+            top_x_diff = cx - x
+
+    bottom_y = parabola_y[bottom_i]
+    top_y = parabola_y[top_i]
+
+    slope = (top_y - bottom_y)/(top_x - bottom_x)
+    result_y = bottom_y + slope * bottom_x_diff
+    return result_y
 
 # this function just reads values from the already-calculated mach number distribution
 def get_mach_num_at(x):

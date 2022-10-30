@@ -127,7 +127,7 @@ def import_file():
                     pass
 
                 if cval == "":
-                    if element == "SS" or element == "CCZ" or element == "Jet_A1":
+                    if element == "SS" or element == "CCZ" or element == "Jet_A1" or element == "bell" or element == "conic":
                         cval = element
                 
                 text_entries[n_line].delete('1.0',"end")
@@ -183,7 +183,9 @@ mw.title("LETALIS")
 mw.iconbitmap('icon.ico')
 
 material_unit = ["[Material]"]
+nozzle_type_unit = ["[NozzleType]"]
 no_unit = ["# (unitless)"]
+percentage_unit = ["%"]
 length_units = ["mm", "cm", "m", "km"]
 angle_units = ["deg", "rad"]
 mass_flow_units = ["kg/s"]
@@ -213,7 +215,7 @@ about_button = tk.Button(mw, text="About", command=show_about)
 about_button.grid(row=0, column=3, columnspan=3, rowspan=2)
 
 hsep1 = ttk.Separator(mw, orient='horizontal')
-hsep1.place(relx=0, rely=0.12, relwidth=1, relheight=0.2)
+hsep1.place(x=0, y=60, relwidth=1, relheight=0.2)
 
 inputs_label = tk.Label(mw, text="DESIGN PARAMETERS", font=("Arial", 13))
 inputs_label.grid(row=3, column=0, columnspan=9)
@@ -225,17 +227,23 @@ create_entry("Throat Diameter", length_units, "float")
 create_entry("Exit Diameter", length_units, "float")
 create_entry("Chamber Contraction Angle", angle_units, "float")
 create_entry("Chamber Radius of Curvature", length_units, "float")
+create_entry("Nozzle Type: 'bell' or 'conic'?", nozzle_type_unit, "string")
+create_label("Conic Nozzle Params")
 create_entry("Nozzle Expansion (Half-)Angle", angle_units, "float")
 create_entry("Throat Upstream Radius of Curvature", length_units, "float")
 create_entry("Throat Downstream Radius of Curvature", length_units, "float")
+create_label("Bell Nozzle Params")
+create_entry("%Length to Conic (optional)", percentage_unit, "float")
+create_entry("Initial Divergence (optional)", angle_units, "float")
+create_entry("Exit Angle (optional)", angle_units, "float")
+abs_column += 1
+N_entries = 0
 
 create_label("Regenerative Cooling System")
 create_entry("Number of Coolant Channels", no_unit, "int")
 create_entry("Inner Wall Thickness (ribs excluded)", length_units, "float")
 create_entry("Coolant Channel Side Wall Width", length_units, "float")
 create_entry("Coolant Channel Radial Depth", length_units, "float")
-abs_column += 1
-N_entries = 0
 
 create_label("Film Cooling System (WIP!)")
 create_entry("Film Cooling Injection Point", length_units, "float")

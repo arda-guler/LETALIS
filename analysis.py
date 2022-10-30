@@ -53,57 +53,121 @@ def perform(params, config_filename=None, getchar=True):
     a_chmContract = params[4] # deg
     ROC_chm = params[5] # m
 
-    a_nzlExp = params[6] # deg
-    ROC_thrtDn = params[7] # m
-    ROC_thrtUp = params[8] # m
+    type_nozzle = params[6]
 
-    n_cochan = params[9] # number of coolant channels
-    L_cochanInnerWallDist = params[10] # m
-    L_cochanSideWall = params[11] # m
-    L_cochanDepth = params[12] # m
+    a_nzlExp = params[7] # deg
+    if type_nozzle == "conic":
+        ROC_thrtDn = params[8] # m
+        ROC_thrtUp = params[9] # m
+    else:
+        ROC_thrtDn = (D_thrt/2) * 0.382
+        ROC_thrtUp = (D_thrt/2) * 1.5
 
-    L_filmInject = params[13] # m
-    mdot_filmInject = params[14] # m
+    percentLength_nzl = params[10]
+    theta_n_nzl = params[11]
+    theta_e_nzl = params[12]
+
+    if type_nozzle == "bell":
+        if not percentLength_nzl:
+            percentLength_nzl = 80
+
+        R_throat = D_thrt * 0.5
+        R_exit = D_exit * 0.5
+        expansion_ratio = (R_exit**2) / (R_throat**2)
+
+        # theta_n not given, get it from Rao's graph
+        if not theta_n_nzl:
+            if percentLength_nzl <= 70:
+                if expansion_ratio < 10:
+                    theta_n_nzl = 30
+                else:
+                    theta_n_nzl = 35
+
+            elif percentLength_nzl <= 85:
+                if expansion_ratio < 30:
+                    theta_n_nzl = 25
+                else:
+                    theta_n_nzl = 30
+
+            else:
+                if expansion_ratio <= 15:
+                    theta_n_nzl = 20
+                else:
+                    theta_n_nzl = 25
+
+        # theta_e not given, get it from Rao's graph
+        if not theta_e_nzl:
+            if percentLength_nzl <= 70:
+                if expansion_ratio < 15:
+                    theta_e_nzl = 20
+                else:
+                    theta_e_nzl = 15
+
+            elif percentLength_nzl <= 85:
+                if expansion_ratio < 10:
+                    theta_e_nzl = 15
+                elif expansion_ratio < 40:
+                    theta_e_nzl = 10
+                else:
+                    theta_e_nzl = 5
+
+            else:
+                if expansion_ratio < 6:
+                    theta_e_nzl = 10
+                else:
+                    theta_e_nzl = 5
+
+    n_cochan = params[13] # number of coolant channels
+    L_cochanInnerWallDist = params[14] # m
+    L_cochanSideWall = params[15] # m
+    L_cochanDepth = params[16] # m
+
+    L_filmInject = params[17] # m
+    mdot_filmInject = params[18] # m
 
     # - - - COMBUSTION / CEA - - -
     D_star = D_thrt # m
-    mdot_chamber = params[15] # kg s-1
-    P_c = params[16] # Pa
+    mdot_chamber = params[19] # kg s-1
+    P_c = params[20] # Pa
     r_c = ROC_thrtDn # m
-    T_c = params[17] # K
-    c_star = params[18] # m/s, CEA
-    gasConductivity = params[19] # W m-1 K-1, CEA
-    avgMolecularMass = params[20] # g mol-1
+    T_c = params[21] # K
+    c_star = params[22] # m/s, CEA
+    gasConductivity = params[23] # W m-1 K-1, CEA
+    avgMolecularMass = params[24] # g mol-1
 
-    T_w = params[21] # K, wall temp
+    T_w = params[25] # K, wall temp
 
     # - - - COMBUSTION CHAMBER INPUTS - - -
-    visc_chm = params[22] # millipoise, CEA
-    gamma_chm = params[23] # CEA
+    visc_chm = params[26] # millipoise, CEA
+    gamma_chm = params[27] # CEA
 
     # - - - THROAT INPUTS - - -
-    visc_thrt = params[24] # millipoise, CEA
-    gamma_thrt = params[25] # CEA
+    visc_thrt = params[28] # millipoise, CEA
+    gamma_thrt = params[29] # CEA
 
     # - - - MATERIALS - - -
-    mtl_innerWall = get_material_by_name(params[26])
-    mtl_outerShell = get_material_by_name(params[27])
+    mtl_innerWall = get_material_by_name(params[30])
+    mtl_outerShell = get_material_by_name(params[31])
 
     # - - - COOLANT - - -
-    mtl_clt = get_material_by_name(params[28])
-    mdot_clt = params[29]/n_cochan # kg s-1 (per channel)
-    T_clt = params[30] # manifold coolant temp. K
-    P_clt = params[31] # manifold coolant press. Pa
+    mtl_clt = get_material_by_name(params[32])
+    mdot_clt = params[33]/n_cochan # kg s-1 (per channel)
+    T_clt = params[34] # manifold coolant temp. K
+    P_clt = params[35] # manifold coolant press. Pa
 
     # - - - ANALYSIS - - -
-    fineness_vertical = params[32]
-    time_end = params[33] # s
-    time_step = params[34] # s
+    fineness_vertical = params[36]
+    time_end = params[37] # s
+    time_step = params[38] # s
     n_steps = int(time_end/time_step)
 
     # calculate engine geometry
-    geom_x, geom_y, x_step, engine_lengths = calculate_geometry(L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm,
-                                                                a_nzlExp, ROC_thrtDn, ROC_thrtUp, fineness_vertical)
+    if type_nozzle == "conic":
+        geom_x, geom_y, x_step, engine_lengths = calculate_geometry(L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm,
+                                                                    a_nzlExp, ROC_thrtDn, ROC_thrtUp, fineness_vertical)
+    else:
+        geom_x, geom_y, x_step, engine_lengths = calculate_geometry_bell(L_engine, D_chm, D_thrt, D_exit, ROC_chm, a_chmContract,
+                                                                    fineness_vertical, percentLength_nzl, theta_n_nzl, theta_e_nzl, 20, 1000)
 
     # generate 3D object
     print("\nGenerating 3D model...")
@@ -111,26 +175,45 @@ def perform(params, config_filename=None, getchar=True):
 
     # calculate Mach distribution
     print("Calculating Mach distribution...")
-    subsonic_x, subsonic_M, supersonic_x, supersonic_M = calc_mach_num(L_engine, engine_lengths[4], T_c, gamma_thrt, avgMolecularMass, fineness_vertical,
-                                                                       L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp)
+    if type_nozzle == "conic":
+        subsonic_x, subsonic_M, supersonic_x, supersonic_M = calc_mach_num(L_engine, engine_lengths[4], T_c, gamma_thrt, avgMolecularMass, fineness_vertical,
+                                                                           L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp)
+    else:
+        subsonic_x, subsonic_M, supersonic_x, supersonic_M = calc_mach_num_bell(L_engine, engine_lengths[4], T_c, gamma_thrt, avgMolecularMass, fineness_vertical,
+                                                                                L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, percentLength_nzl, theta_n_nzl, theta_e_nzl)
 
     # generate cylinders
     print("Generating segments...")
     m_engine = 0
     r_prev = None
     cylinders = []
-    for i in range(fineness_vertical):
-        x = i * x_step
-        r_in = get_inner_radius_at(x, L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp)
-        r_clt = r_in + L_cochanInnerWallDist
-        r_out = r_clt + L_cochanDepth
-        a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
-        Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
-        new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
-        cylinders.append(new_cylinder)
-        m_engine += new_cylinder.get_m()
 
-        r_prev = r_in
+    if type_nozzle == "conic":
+        for i in range(fineness_vertical):
+            x = i * x_step
+            r_in = get_inner_radius_at(x, L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp)
+            r_clt = r_in + L_cochanInnerWallDist
+            r_out = r_clt + L_cochanDepth
+            a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
+            Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
+            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
+            cylinders.append(new_cylinder)
+            m_engine += new_cylinder.get_m()
+
+            r_prev = r_in
+    else:
+        for i in range(fineness_vertical):
+            x = i * x_step
+            r_in = get_inner_radius_at_bell(x, L_engine, D_chm, D_thrt, D_exit, ROC_chm, a_chmContract, percentLength_nzl, theta_n_nzl, theta_e_nzl)
+            r_clt = r_in + L_cochanInnerWallDist
+            r_out = r_clt + L_cochanDepth
+            a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
+            Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
+            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
+            cylinders.append(new_cylinder)
+            m_engine += new_cylinder.get_m()
+
+            r_prev = r_in
 
     # get important coolant channel widths
     L_skirt_chan_width = (2*pi*cylinders[-1].r_clt) * (cylinders[-1].a_clt/360)
