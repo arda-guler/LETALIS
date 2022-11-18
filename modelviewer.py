@@ -14,9 +14,9 @@ def show_scale(origin, scale, end):
     current_z = origin[2]
 
     glPushMatrix()
-    glColor(0,1,0)
+    glColor(1,0,0)
     glBegin(GL_LINES)
-    while current_x < end[0]:
+    while current_x < end[0] * 2:
         glVertex3f(current_x, current_y, current_z)
         current_x += scale
 
@@ -25,8 +25,9 @@ def show_scale(origin, scale, end):
     current_x = origin[0]
 
     glPushMatrix()
+    glColor(0,1,0)
     glBegin(GL_LINES)
-    while current_y < end[1]:
+    while current_y < end[1] * 2:
         glVertex3f(current_x, current_y, current_z)
         current_y += scale
 
@@ -35,8 +36,9 @@ def show_scale(origin, scale, end):
     current_y = origin[1]
 
     glPushMatrix()
+    glColor(0,0,1)
     glBegin(GL_LINES)
-    while current_z < end[2]:
+    while current_z < end[2] * 2:
         glVertex3f(current_x, current_y, current_z)
         current_z += scale
 
@@ -148,6 +150,7 @@ def main():
 
     show_inner = True
     show_outer = True
+    detail_dx = 15
 
     x_end = model_data[-2][0][0][0]
     x_mid = x_end/2
@@ -162,6 +165,13 @@ def main():
     print("Reference scale:", scale_size*1000, "mm")
     scale_origin = [0, y_end, z_end]
     scale_end = [scale_origin[0] + x_end, scale_origin[1]-2*y_end, scale_origin[2]-2*z_end]
+
+    print("Controls:")
+    print("WASDQE for camera moevement")
+    print("IJKLUO for camera rotation")
+    print("X, C to show or hide inner wall")
+    print("V, B to show or hide channel geometry")
+    print("9, 0 to increase/decrease radial detail")
     
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -278,6 +288,11 @@ def main():
             show_outer = False
         if keyboard.is_pressed("v"):
             show_outer = True
+
+        if keyboard.is_pressed("9") and detail_dx > 1:
+            detail_dx -= 1
+        if keyboard.is_pressed("0") and detail_dx < 100:
+            detail_dx += 1
             
         # rendering
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -286,21 +301,21 @@ def main():
 
             # radial draw
             if show_inner:
-                glColor(0.8, 0.2, 0.2)
+                glColor(0.8, 0.8, 0.2)
                 # inner wall vertices
                 glPushMatrix()
                 glBegin(GL_LINE_STRIP)
-                for ivertex in axial[0][::15]:
+                for ivertex in axial[0][::detail_dx]:
                     glVertex3f(ivertex[0], ivertex[1], ivertex[2])
                 glEnd()
                 glPopMatrix()
 
             if show_outer:
-                glColor(0.2, 0.5, 0.8)
+                glColor(0.2, 0.8, 0.8)
                 # outer wall vertices
                 glPushMatrix()
                 glBegin(GL_LINE_STRIP)
-                for overtex in axial[1]:
+                for overtex in axial[1][::detail_dx]:
                     glVertex3d(overtex[0], overtex[1], overtex[2])
                 glEnd()
                 glPopMatrix()
@@ -312,24 +327,24 @@ def main():
         while rad_index < n_angular:
 
             if show_inner:
-                glColor(0.8, 0.2, 0.2)
+                glColor(0.8, 0.8, 0.2)
                 glBegin(GL_LINE_STRIP)
                 ax_index = 0
                 
                 while ax_index < len(model_data) - 1:
                     glVertex3f(model_data[ax_index][0][rad_index][0], model_data[ax_index][0][rad_index][1], model_data[ax_index][0][rad_index][2])
-                    ax_index += int(len(model_data)/50)
+                    ax_index += int(len(model_data) * detail_dx/200)
                     
                 glEnd()
 
             if show_outer:
-                glColor(0.2, 0.5, 0.8)
+                glColor(0.2, 0.8, 0.8)
                 glBegin(GL_LINE_STRIP)
                 ax_index = 0
                 
                 while ax_index < len(model_data) - 1:
                     glVertex3f(model_data[ax_index][1][rad_index][0], model_data[ax_index][1][rad_index][1], model_data[ax_index][1][rad_index][2])
-                    ax_index += int(len(model_data)/50)
+                    ax_index += int(len(model_data) * detail_dx/200)
                     
                 glEnd()
             

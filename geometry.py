@@ -624,7 +624,7 @@ def generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanSideWal
     
     vertices = []
     faces = []
-    n_vertices_half_circle = max(int(n_cochan * 5), 90)
+    n_vertices_half_circle = max(int(n_cochan * 20), 90)
 
     x_index = 0
     for x in geom_x:
