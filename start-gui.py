@@ -242,7 +242,7 @@ N_entries = 0
 create_label("Regenerative Cooling System")
 create_entry("Number of Coolant Channels", no_unit, "int")
 create_entry("Inner Wall Thickness (ribs excluded)", length_units, "float")
-create_entry("Coolant Channel Side Wall Width", length_units, "float")
+create_entry("Coolant Channel Tangential Width", length_units, "float")
 create_entry("Coolant Channel Radial Depth", length_units, "float")
 
 create_label("Film Cooling System (WIP!)")

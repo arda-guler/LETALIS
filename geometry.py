@@ -17,42 +17,29 @@ def get_sector_face_area_slanted(r1, r2, angle, height):
     return (pi*r2 + pi*r1) * height * (angle/360)
 
 class cylinder:
-    def __init__(self, x, r_in, r_out, h, n_clt, r_clt, a_clt, mtl, T_init, M, r_prev=None):
+    def __init__(self, x, r_in, r_out, h, n_clt, r_clt, a_clt, b_clt, mtl, T_init, M, r_prev=None):
         self.x = x
         self.r_in = r_in
         self.thickness = r_out - r_in
         self.r_out = r_out
         self.h = h # height
 
-        # inner wall length
-        if r_prev and not r_prev == r_in: # cylinder is on a curve
-            self.a_axial = math.atan((r_in - r_prev)/h)
-            self.L_in = self.h * math.cos(self.a_axial)
-        else: # cylinder has constant radius
-            self.a_axial = 0
-            self.L_in = self.h
+        self.L_in = self.h
 
         self.n_clt = n_clt # number of coolant channels
         self.r_clt = r_clt # coolant channel inner radius
-        self.a_clt = a_clt # coolant channel angle (degrees)
+        self.a_clt = a_clt # coolant channel tangential width
+        self.b_clt = b_clt # coolant channel radial depth
         
         self.mtl = mtl # material
         self.T = T_init # temperature
         self.Mach = M # flow mach number at cylinder position
 
-        if r_prev:
-            dr = r_clt - r_in
-            r_clt2 = r_prev + dr
-            self.A_chm = get_sector_face_area_slanted(r_in, r_prev, 360, h) # area facing chamber (m2)
-            self.A_cochan_flow = get_area_of_sector(r_clt, r_out, a_clt) # flow area of single coolant channel (m2)
-            self.A_clt = (get_sector_face_area_slanted(r_clt, r_clt2, a_clt, h) + 2*(r_out - r_clt)*h) * n_clt # area facing coolant (m2)
+        self.A_chm = get_sector_face_area(r_in, 360, h) # area facing chamber (m2)
+        self.A_cochan_flow = a_clt * b_clt # flow area of single coolant channel (m2)
+        self.A_clt = n_clt * h * (a_clt + 2 * b_clt) # area facing coolant (m2)
 
-        else:
-            self.A_chm = get_sector_face_area(r_in, 360, h) # area facing chamber (m2)
-            self.A_cochan_flow = get_area_of_sector(r_clt, r_out, a_clt) # flow area of single coolant channel (m2)
-            self.A_clt = (get_sector_face_area(r_clt, a_clt, h) + 2*(r_out - r_clt)*h) * n_clt # area facing coolant (m2)
-
-        self.V = get_volume_of_sector(r_in, r_out, 360, h) - (n_clt * get_volume_of_sector(r_clt, r_out, a_clt, h)) # volume (m3)
+        self.V = get_volume_of_sector(r_in, r_out, 360, h) - (self.A_cochan_flow * h * n_clt) # volume (m3)
         self.m = self.V * self.mtl.get_density() # mass
 
     def get_m(self):
@@ -620,7 +607,7 @@ def get_mach_num_at(x):
         return supersonic_mach[index]
 
 # generate a 3D model of the engine geometry
-def generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanSideWall, L_cochanDepth):
+def generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth):
     
     vertices = []
     faces = []

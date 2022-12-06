@@ -119,7 +119,7 @@ def perform(params, config_filename=None, getchar=True):
 
     n_cochan = params[13] # number of coolant channels
     L_cochanInnerWallDist = params[14] # m
-    L_cochanSideWall = params[15] # m
+    L_cochanTangentialWidth = params[15] # m
     L_cochanDepth = params[16] # m
 
     L_filmInject = params[17] # m
@@ -170,8 +170,8 @@ def perform(params, config_filename=None, getchar=True):
                                                                     fineness_vertical, percentLength_nzl, theta_n_nzl, theta_e_nzl, 20, 1000)
 
     # generate 3D object
-    print("\nGenerating 3D model...")
-    vis_model = generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanSideWall, L_cochanDepth)
+##    print("\nGenerating 3D model...")
+##    vis_model = generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth)
 
     # calculate Mach distribution
     print("Calculating Mach distribution...")
@@ -194,9 +194,10 @@ def perform(params, config_filename=None, getchar=True):
             r_in = get_inner_radius_at(x, L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp)
             r_clt = r_in + L_cochanInnerWallDist
             r_out = r_clt + L_cochanDepth
-            a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
+            a_clt = L_cochanTangentialWidth
+            b_clt = L_cochanDepth
             Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
-            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
+            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, b_clt, mtl_innerWall, T_w, Mach, r_prev)
             cylinders.append(new_cylinder)
             m_engine += new_cylinder.get_m()
 
@@ -207,9 +208,10 @@ def perform(params, config_filename=None, getchar=True):
             r_in = get_inner_radius_at_bell(x, L_engine, D_chm, D_thrt, D_exit, ROC_chm, a_chmContract, percentLength_nzl, theta_n_nzl, theta_e_nzl)
             r_clt = r_in + L_cochanInnerWallDist
             r_out = r_clt + L_cochanDepth
-            a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
+            a_clt = L_cochanTangentialWidth
+            b_clt = L_cochanDepth
             Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
-            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
+            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, b_clt, mtl_innerWall, T_w, Mach, r_prev)
             cylinders.append(new_cylinder)
             m_engine += new_cylinder.get_m()
 
@@ -319,13 +321,8 @@ def perform(params, config_filename=None, getchar=True):
             A = pi * cy.r_in**2
 
             xd = cy.x - L_filmInject
-            Hs = 0.025
+            Hs = 0.025 * cy.r_in
             Kt = 0.05 * 10**(-2)
-            r_full = cy.r_in
-            r_surf = cy.r_in - cy.r_in * Hs
-            
-            mf0 = mdot_filmInject # surface layer film flow
-            ms0 = mdot_chamber * (pi * (r_full**2 - r_surf**2)/A) # surface layer gas flow
 
             # calculate flow temperature at point
             T_gas = (1 + (gamma-1)/2 * M**2)**(-1) * T_c
@@ -338,8 +335,6 @@ def perform(params, config_filename=None, getchar=True):
                 film_exists = True
                 mdot_clt_current = mdot_clt - mdot_filmInject/n_cochan
                 mdot_film_current = mdot_filmInject
-                ms = ms0
-                mf = mf0
                 
             # there is film cooling!
             if mdot_filmInject > 0 and cy.x >= L_filmInject and mdot_film_current >= 0: # TODO: add this to material properties 
@@ -362,13 +357,15 @@ def perform(params, config_filename=None, getchar=True):
                         cylinder_film_exists[i_cylinder_film] = False
                         mdot_film_current = 0
 
-                        bigM = Kt * ms / mf
-                        xbarsquared = x / Hs
-                        xeta = 1 - euler**(-bigM * xbarsquared)
-                        ms = ms0 * (1-xeta/2) + mf0 * xeta/2
-                        mf = ms0 * xeta/2 + mf0 * (1-xeta/2)
-                        T_layer = T_film + xeta * (T_c - T_film)
-                        rT_layers[i_cylinder_film] = xeta * 20 # There is an archvile!
+                        mbar_f = mdot_filmInject / mdot_chamber
+                        A_surface_layer = pi * cy.r_in**2 - pi * (cy.r_in - Hs)**2
+                        mdot_surface_layer = (A_surface_layer/(pi * cy.r_in**2)) * mdot_chamber
+                        mbar_s = mdot_surface_layer / mdot_chamber
+                        x_squared = xd/Hs
+                        bigM = Kt * (mbar_s/mbar_f)
+                        xeta = 1 - euler**(-x_squared * bigM)
+                        T_layer = (T_film + xeta * (T_c - T_film)) 
+                        rT_layers[i_cylinder_film] = xeta
 
             if t_step % 100 == 0:
                 T_films[j].append(T_film)
@@ -407,7 +404,7 @@ def perform(params, config_filename=None, getchar=True):
 
             if not cylinder_film_exists[i_cylinder_regen]: # no film cooling on this cylinder
 
-                T_effective = T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film)
+                T_effective = T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film) * 1.25 # Archvile!
                 Q_in = h_g * (T_effective - cy.T) * cy.get_A_chm() * time_step
                 Q_in_per_area = h_g * (T_effective - cy.T) # W per m2 (this is only for plotting)
                 Q_in_full += Q_in
@@ -418,7 +415,7 @@ def perform(params, config_filename=None, getchar=True):
 
             # compute Reynold's number
             # https://en.wikipedia.org/wiki/Hydraulic_diameter
-            wet_perimeter = (2 * pi * cy.r_clt) * (cy.a_clt/360) + (2 * pi * cy.r_out) * (cy.a_clt/360) + 2 * L_cochanDepth
+            wet_perimeter = cy.a_clt + 2 * cy.b_clt
             flow_area = cy.A_cochan_flow
             D_hydro = 4 * (flow_area / wet_perimeter)
             Reynolds_num = (mdot_clt_current * D_hydro) / (mtl_clt.get_viscosity(T_clt_current) * cy.A_cochan_flow)
@@ -519,7 +516,7 @@ def perform(params, config_filename=None, getchar=True):
     plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts,
               T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
-              L_max_chan_width, engine_lengths, vis_model, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
+              L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
               total_clt_press_drops, config_filename)
 
     if getchar:
