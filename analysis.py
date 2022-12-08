@@ -404,7 +404,7 @@ def perform(params, config_filename=None, getchar=True):
 
             if not cylinder_film_exists[i_cylinder_regen]: # no film cooling on this cylinder
 
-                T_effective = T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film) * 1.25 # Archvile!
+                T_effective = min(T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film) * 1.25, T_gas) # Archvile!
                 Q_in = h_g * (T_effective - cy.T) * cy.get_A_chm() * time_step
                 Q_in_per_area = h_g * (T_effective - cy.T) # W per m2 (this is only for plotting)
                 Q_in_full += Q_in
