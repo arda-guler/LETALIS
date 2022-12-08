@@ -354,7 +354,7 @@ def main():
                     
                 glEnd()
             
-                rad_index += max(n_angular / 50, 1)
+                rad_index += max(int(n_angular / 50), 1)
 
         if show_outer and draw_outer_axial:
             while rad_index2 < len(model_data[0][1]) - 1:
