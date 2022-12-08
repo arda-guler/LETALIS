@@ -8,7 +8,7 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
               h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
               L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
-              total_clt_press_drops, filename=None):
+              total_clt_press_drops, vis_model, filename=None):
 
     # PRINT TOTAL Q
     Q_in_total = 0
@@ -494,10 +494,10 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
     except:
         print("WARNING: Couldn't export 3D model!")
 
-##    try:
-##        shutil.copy(filename, folder_name)
-##    except:
-##        print("WARNING: Could not copy inputs file to analysis folder.")
+    try:
+        shutil.copy(filename, folder_name)
+    except:
+        print("WARNING: Could not copy inputs file to analysis folder.")
 
     try:
         shutil.copy("modelviewer.py", folder_name)

@@ -170,8 +170,8 @@ def perform(params, config_filename=None, getchar=True):
                                                                     fineness_vertical, percentLength_nzl, theta_n_nzl, theta_e_nzl, 20, 1000)
 
     # generate 3D object
-##    print("\nGenerating 3D model...")
-##    vis_model = generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth)
+    print("\nGenerating 3D model...")
+    vis_model = generate_3D_blade(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth)
 
     # calculate Mach distribution
     print("Calculating Mach distribution...")
@@ -517,7 +517,7 @@ def perform(params, config_filename=None, getchar=True):
               T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
               L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
-              total_clt_press_drops, config_filename)
+              total_clt_press_drops, vis_model, config_filename)
 
     if getchar:
         qc = input("Press Enter to move on...")

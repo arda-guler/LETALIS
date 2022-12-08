@@ -607,7 +607,7 @@ def get_mach_num_at(x):
         return supersonic_mach[index]
 
 # generate a 3D model of the engine geometry
-def generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth):
+def generate_3D_old(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth):
     
     vertices = []
     faces = []
@@ -652,4 +652,67 @@ def generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangent
 
         x_index += 1
 
+    return vertices
+
+def generate_3D_blade(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth):
+    
+    # simplify expressions for ease of coding
+    a = L_cochanTangentialWidth
+    b = L_cochanDepth
+    t = L_cochanInnerWallDist
+    n = n_cochan
+
+    n_verticesInnerHalfCircle = int(n/2)
+
+    a_chanWallTotalOut = pi/n
+
+    vertices = []
+
+    for idx in range(len(geom_x)):
+        x = geom_x[idx]
+        r_in = geom_y[idx]
+        
+        # build inner wall (this one is easy)
+        theta = pi/2
+        r_clt = r_in + t
+        r_out = r_clt + b
+
+        theta = -pi/2
+        for i in range(n_verticesInnerHalfCircle):
+            current_vertex = [x, r_in * math.sin(theta), r_in * math.cos(theta)]
+            vertices.append(current_vertex)
+            theta += pi/n_verticesInnerHalfCircle
+
+        # build regen channels
+        vertices.append("OUTERSHELL")
+
+        a_halfChanOut = math.atan((0.5*a)/r_out) # half channel angle at outer edge
+        a_wallOut = a_chanWallTotalOut - 2 * a_halfChanOut # wall angle at outer edge
+        
+        theta = -pi/2
+        
+        for i in range(n_verticesInnerHalfCircle):
+
+            shell_center = [x, (r_out + r_clt)/2 * math.sin(theta), (r_out + r_clt)/2 * math.cos(theta)]
+
+            theta2 = -theta + pi/2
+            shell_pt1 = [0, b/2 * math.cos(theta2) - (-a/2) * math.sin(theta2), b/2 * math.sin(theta2) + (-a/2) * math.cos(theta2)]
+            shell_pt2 = [0, -b/2 * math.cos(theta2) - (-a/2) * math.sin(theta2), -b/2 * math.sin(theta2) + (-a/2) * math.cos(theta2)]
+            shell_pt3 = [0, -b/2 * math.cos(theta2) - a/2 * math.sin(theta2), -b/2 * math.sin(theta2) + (a/2) * math.cos(theta2)]
+            shell_pt4 = [0, b/2 * math.cos(theta2) - a/2 * math.sin(theta2), b/2 * math.sin(theta2) + (a/2) * math.cos(theta2)]
+
+            shell_abs1 = [shell_center[0] + shell_pt1[0], shell_center[1] + shell_pt1[1], shell_center[2] + shell_pt1[2]]
+            shell_abs2 = [shell_center[0] + shell_pt2[0], shell_center[1] + shell_pt2[1], shell_center[2] + shell_pt2[2]]
+            shell_abs3 = [shell_center[0] + shell_pt3[0], shell_center[1] + shell_pt3[1], shell_center[2] + shell_pt3[2]]
+            shell_abs4 = [shell_center[0] + shell_pt4[0], shell_center[1] + shell_pt4[1], shell_center[2] + shell_pt4[2]]
+
+            vertices.append(shell_abs1)
+            vertices.append(shell_abs2)
+            vertices.append(shell_abs3)
+            vertices.append(shell_abs4)
+
+            theta += pi/n_verticesInnerHalfCircle
+
+        vertices.append("NEWX")
+    
     return vertices
