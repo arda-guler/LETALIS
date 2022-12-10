@@ -10,6 +10,9 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
               L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
               total_clt_press_drops, vis_model, filename=None):
 
+    # stop max. number of figures warning (because death to your RAM, that's why!)
+    plt.rcParams.update({'figure.max_open_warning': 0})
+
     # PRINT TOTAL Q
     Q_in_total = 0
     for Q in Q_in_fulls:
@@ -47,7 +50,7 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
     ax2.yaxis.tick_left()
     
     for i in range(0, num_frames, int(num_frames/10)):
-        red = min(1, max(cylinder_temps[i])/600)
+        red = max(min(1, max(cylinder_temps[i])/600),0)
         blue = 1 - red
         ax2.plot(xs, cylinder_temps[i], color=(red, 0, blue))
 
@@ -68,7 +71,7 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
     ax2.yaxis.tick_left()
 
     for i in range(0, num_frames, int(num_frames/10)):
-        red = min(1, max(coolant_temps[i])/350)
+        red = max(min(1, max(coolant_temps[i])/350),0)
         blue = 1 - red
         ax2.plot(xs, coolant_temps[i], color=(red, 0, blue))
 
@@ -304,17 +307,19 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
     plotnum += 1
     plt.figure(plotnum)
 
-    plt.axes().set_aspect('equal')
-    plt.plot(geom_x, geom_y)
+    ax.set_aspect('equal')
+    
     geom_y_negative = []
     for y in geom_y:
         geom_y_negative.append(-y)
-    plt.plot(geom_x, geom_y_negative)
+        
+    ax.plot(geom_x, geom_y)
+    ax.plot(geom_x, geom_y_negative)
 
     plt.grid()
     plt.title("Thrust Chamber Geometry")
-    plt.xlabel("X")
-    plt.ylabel("Y")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
 
     # FLOW AREA
     _, ax = plt.subplots()

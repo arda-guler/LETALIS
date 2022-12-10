@@ -471,6 +471,18 @@ def perform(params, config_filename=None, getchar=True):
                 Pr_clt = 0
                 Nusselt_num = 0
                 coolant_press_drop = 0
+
+            # axial conduction of heat (positive direction is from nozzle exit towards injector face)
+            if cylinders.index(cy) - 1 >= 0:
+                cy_upper = cylinders[cylinders.index(cy) - 1]
+                A_axial = get_area_of_sector(cy.r_in, cy.r_out, 360) - (cy.A_cochan_flow * n_cochan)
+                k_axial = cy.mtl.get_thermal_conductivity(cy.T)
+                dx_axial = cy.h
+                dT_axial = cy.T - cy_upper.T
+                #print(A_axial, k_axial, dx_axial, dT_axial)
+                Q_axial = (k_axial * A_axial * dT_axial / dx_axial) * time_step
+                cy.T -= Q_axial/cy.get_heat_capacity()
+                cy_upper.T += Q_axial/cy.get_heat_capacity()
                 
             # record data for plotting
             if t_step == 0:
