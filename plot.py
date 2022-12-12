@@ -2,6 +2,7 @@ import time
 import datetime
 import os
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import shutil
 
 def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases,
@@ -457,6 +458,79 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
     plt.xlabel("Time")
     plt.ylabel("Total Coolant Pressure Drop (Pa)")
 
+    ### ANIMATED FIGURES
+    anims = []
+    anim_plotnum = 0
+    
+    # WALL TEMP ANIMATED
+    fig, ax = plt.subplots()
+    anim_plotnum += 1
+    plt.figure(plotnum + anim_plotnum)
+    plt.title("Wall Temp.")
+    plt.xlabel("X Position (mm)")
+    plt.ylabel("Temperature (C)")
+    plt.grid()
+
+    plt.xlim = (0, xs[-1])
+    plt.ylim(0, max(cylinder_temps[-1]) + 50)
+    wall_temp_line, = ax.plot(xs, cylinder_temps[-1])
+
+    def animate_wall_temp(i):
+        wall_temp_line.set_ydata(cylinder_temps[i])
+        return wall_temp_line,
+
+    anim_wall_temp = animation.FuncAnimation(
+        fig, animate_wall_temp, blit=True, frames=list(range(len(cylinder_temps))))
+
+    anims.append(anim_wall_temp)
+
+    # COOLANT TEMP ANIMATED
+    fig, ax = plt.subplots()
+    anim_plotnum += 1
+    plt.figure(plotnum + anim_plotnum)
+    plt.title("Coolant Temp.")
+    plt.xlabel("X Position (mm)")
+    plt.ylabel("Coolant Temp. (C)")
+    plt.grid()
+
+    plt.xlim = (0, xs[-1])
+    plt.ylim(0, max(coolant_temps[-1]) + 50)
+    coolant_temp_line, = ax.plot(xs, coolant_temps[-1])
+
+    def animate_coolant_temp(i):
+        coolant_temp_line.set_ydata(coolant_temps[i])
+        return coolant_temp_line,
+
+    anim_coolant_temp = animation.FuncAnimation(
+        fig, animate_coolant_temp, blit=True, frames=list(range(len(coolant_temps))))
+
+    anims.append(anim_coolant_temp)
+
+    # HEAT FLOWS TEMP ANIMATED
+    fig, ax = plt.subplots()
+    anim_plotnum += 1
+    plt.figure(plotnum + anim_plotnum)
+    plt.title("Heat Transferred")
+    plt.xlabel("X Position (mm)")
+    plt.ylabel("Heat (W)")
+    plt.grid()
+
+    plt.xlim = (0, xs[-1])
+    plt.ylim(min(Q_outs[-1]), max(Q_ins[-1]) + 500)
+    Q_ins_line, = ax.plot(xs, Q_ins[-1])
+    Q_outs_line, = ax.plot(xs, Q_outs[-1])
+
+    def animate_heat_transfer(i):
+        Q_ins_line.set_ydata(Q_ins[i])
+        Q_outs_line.set_ydata(Q_outs[i])
+
+        return Q_ins_line, Q_outs_line,
+
+    anim_heat_trans = animation.FuncAnimation(
+        fig, animate_heat_transfer, blit=True, frames=list(range(len(Q_ins))))
+
+    anims.append(anim_heat_trans)
+
     print("")
 
     if not filename:
@@ -484,10 +558,10 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
             f.write("ys=" + str(geom_y))
             f.write("\n\n")
             f.write("Engine mass (kg): " + str(m_engine) + "\n\n")
-            f.write("Min. coolant channel width (m): " + str(L_min_chan_width) + "\n")
-            f.write("Max. coolant channel width (m): " + str(L_max_chan_width) + "\n")
-            f.write("Chamber coolant channel width (m): " + str(L_chamber_chan_width) + "\n")
-            f.write("Skirt coolant channel width (m): " + str(L_skirt_chan_width) + "\n\n")
+            #f.write("Min. coolant channel width (m): " + str(L_min_chan_width) + "\n")
+            #f.write("Max. coolant channel width (m): " + str(L_max_chan_width) + "\n")
+            #f.write("Chamber coolant channel width (m): " + str(L_chamber_chan_width) + "\n")
+            #f.write("Skirt coolant channel width (m): " + str(L_skirt_chan_width) + "\n\n")
             f.write("Engine contour change positions (m) = " + str(engine_lengths))
     except:
         print("WARNING: Could not export geometry data.")
@@ -519,10 +593,21 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
         plt.show()
         return
 
+    try:
+        for anim_idx in range(len(anims)):
+            plt.figure(plotnum + anim_idx)
+            anim = anims[anim_idx]
+            save_str = folder_name + "/anim_" + str(anim_idx + 1) + ".gif"
+            anim.save(save_str)
+    except:
+        print("ERROR: Could not save some or all of animated figures. Try saving figures by hand.")
+        #plt.show()
+        return
+
     print("Figures exported successfully!")
     
     print("Clearing figures from memory...")
-    for i in range(1, plotnum + 1):
+    for i in range(1, plotnum + anim_plotnum + 1):
         new_fig = plt.figure(i)
         new_fig.clear()
         plt.close()
