@@ -1,5 +1,7 @@
 import math
 pi = math.pi
+import random
+
 uni_gas_const = uni_gas_const = 8.314472 # m2 kg s-2 K-1 mol-1
 
 from geometry import get_inner_radius_at, get_inner_radius_at_bell
@@ -45,28 +47,24 @@ def calc_mach_num(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, fineness,
 
         infinity_fuse = 0
         while abs(A_ratio - aro) > 0.0001:
-            fac = 1 + 0.5 * gm1 * machn**2
-            arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
-            deriv = (arn-aro)/(machn-macho)
-            aro = arn
-            macho = machn
-            machn = macho + (arat - aro)/deriv
+            try:
+                fac = 1 + 0.5 * gm1 * machn**2
+                arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
+                deriv = (arn-aro)/(machn-macho)
+                aro = arn
+                macho = machn
+                machn = macho + (arat - aro)/deriv
+            except ZeroDivisionError:
+                print("The Mach profile calculator attempted to divide by zero.")
+                break
 
-        # - - - - - - END QUOTE - - - - - -
+            # - - - - - - END QUOTE - - - - - -
 
-            infinity_fuse += 1
+                infinity_fuse += 1
 
-            if infinity_fuse > pseudo_infinity:
-                print("Mach number calculator might have entered an infinite loop, because it hasn't converged for", pseudo_infinity, "iterations. (A)bort or (C)ontinue for another", pseudo_infinity, "iterations?")
-                fuse_replacement = input(" > ")
-                if fuse_replacement.lower() == "c":
-                    infinity_fuse = 0
-                elif fuse_replacement.lower() == "a":
-                    print("Analysis aborted.")
-                    input("Press Enter to quit...")
-                    quit()
-                else:
-                    print("Invalid choice!")
+                if infinity_fuse > pseudo_infinity:
+                    print("The Mach profile calculator seems to be not converging. Trying a new initial guess...")
+                    macho = random.uniform(0.01, 0.99)
 
         # required failsafe
         # NASA's code fails spectacularly if
@@ -105,12 +103,16 @@ def calc_mach_num(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, fineness,
 
         infinity_fuse = 0
         while abs(A_ratio - aro) > .0001:
-            fac = 1 + 0.5 * gm1 * machn**2
-            arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
-            deriv = (arn-aro)/(machn-macho)
-            aro = arn
-            macho = machn
-            machn = macho + (arat - aro)/deriv
+            try:
+                fac = 1 + 0.5 * gm1 * machn**2
+                arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
+                deriv = (arn-aro)/(machn-macho)
+                aro = arn
+                macho = machn
+                machn = macho + (arat - aro)/deriv
+            except ZeroDivisionError:
+                print("The Mach profile calculator attempted to divide by zero.")
+                break
         # - - - - - - END QUOTE - - - - - -
 
             infinity_fuse += 1
@@ -120,6 +122,9 @@ def calc_mach_num(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, fineness,
                 fuse_replacement = input(" > ")
                 if fuse_replacement.lower() == "c":
                     infinity_fuse = 0
+                    # get new initial guess because the old one obviously is no good
+                    macho = random.uniform(1.01, 4.99)
+                    print("DEBUG: New initial guess:", macho)
                 elif fuse_replacement.lower() == "a":
                     print("Analysis aborted.")
                     input("Press Enter to quit...")
@@ -165,12 +170,16 @@ def calc_mach_num_bell(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, finene
 
         infinity_fuse = 0
         while abs(A_ratio - aro) > 0.0001:
-            fac = 1 + 0.5 * gm1 * machn**2
-            arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
-            deriv = (arn-aro)/(machn-macho)
-            aro = arn
-            macho = machn
-            machn = macho + (arat - aro)/deriv
+            try:
+                fac = 1 + 0.5 * gm1 * machn**2
+                arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
+                deriv = (arn-aro)/(machn-macho)
+                aro = arn
+                macho = machn
+                machn = macho + (arat - aro)/deriv
+            except ZeroDivisionError:
+                print("The Mach profile calculator attempted to divide by zero.")
+                break
 
         # - - - - - - END QUOTE - - - - - -
 
@@ -181,6 +190,9 @@ def calc_mach_num_bell(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, finene
                 fuse_replacement = input(" > ")
                 if fuse_replacement.lower() == "c":
                     infinity_fuse = 0
+                    # get new initial guess because the old one obviously is no good
+                    macho = random.uniform(0.01, 0.99)
+                    print("DEBUG: New initial guess:", macho)
                 elif fuse_replacement.lower() == "a":
                     print("Analysis aborted.")
                     input("Press Enter to quit...")
@@ -225,12 +237,16 @@ def calc_mach_num_bell(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, finene
 
         infinity_fuse = 0
         while abs(A_ratio - aro) > .0001:
-            fac = 1 + 0.5 * gm1 * machn**2
-            arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
-            deriv = (arn-aro)/(machn-macho)
-            aro = arn
-            macho = machn
-            machn = macho + (arat - aro)/deriv
+            try:
+                fac = 1 + 0.5 * gm1 * machn**2
+                arn = 1/(machn * fac**(-fac1) * (gp1/2)**fac1)
+                deriv = (arn-aro)/(machn-macho)
+                aro = arn
+                macho = machn
+                machn = macho + (arat - aro)/deriv
+            except ZeroDivisionError:
+                print("The Mach profile calculator attempted to divide by zero.")
+                break
         # - - - - - - END QUOTE - - - - - -
 
             infinity_fuse += 1
@@ -240,6 +256,9 @@ def calc_mach_num_bell(x_end, x_thrt, Tc, gamma_thrt, avg_molecular_mass, finene
                 fuse_replacement = input(" > ")
                 if fuse_replacement.lower() == "c":
                     infinity_fuse = 0
+                    # get new initial guess because the old one obviously is no good
+                    macho = random.uniform(1.01, 4.99)
+                    print("DEBUG: New initial guess:", macho)
                 elif fuse_replacement.lower() == "a":
                     print("Analysis aborted.")
                     input("Press Enter to quit...")

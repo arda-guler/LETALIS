@@ -104,30 +104,48 @@ def import_model():
     x_index = 0
     outer = 0
 
+    injections = False
+    injection_vertices = []
     for line in import_lines:
-        
-        if line == "OUTERSHELL\n":
-            outer = 1
 
-        elif line == "NEWX\n":
-            axials.append([[],[]])
-            x_index += 1
-            outer = 0
-            
+        if not injections:
+            if line == "OUTERSHELL\n":
+                outer = 1
+
+            elif line == "NEWX\n":
+                axials.append([[],[]])
+                x_index += 1
+                outer = 0
+
+            elif line == "INJECTION_UPSTREAM\n" or line == "INJECTION_DOWNSTREAM\n":
+                injections = True
+                
+            else:
+                line = line[1:-2]
+                line = line.split(",")
+                x = float(line[0])
+                y = float(line[1])
+                z = float(line[2])
+
+                axials[x_index][outer].append([x, y, z])
+
         else:
-            line = line[1:-2]
-            line = line.split(",")
-            x = float(line[0])
-            y = float(line[1])
-            z = float(line[2])
+            if line == "INJECTION_UPSTREAM\n" or line == "INJECTION_DOWNSTREAM\n":
+                pass
+            else:
+                line = line[1:-2]
+                line = line.split(",")
+                x = float(line[0])
+                y = float(line[1])
+                z = float(line[2])
 
-            axials[x_index][outer].append([x, y, z])
+                injection_vertices.append([x, y, z])
 
-    return axials
+    return axials, injection_vertices
 
 def main():
     print("Reading 3D model...")
-    model_data = import_model()
+    model_data, injection_vertices = import_model()
 
     window_x = 1000
     window_y = 600
@@ -145,6 +163,7 @@ def main():
     gluPerspective(fov, window_ratio, near_clip, far_clip)
     glEnable(GL_CULL_FACE)
     glPolygonMode(GL_FRONT_AND_BACK, GL_POINT)
+    glPointSize(5)
 
     main_cam = camera([0,0,0], [[1,0,0],[0,1,0],[0,0,1]])
 
@@ -372,6 +391,13 @@ def main():
                 rad_index2 += 1
 
         glPopMatrix()
+
+        # injection points
+        glColor(0.8, 0.2, 0.8)
+        glBegin(GL_POINTS)
+        for pt in injection_vertices:
+            glVertex3f(pt[0], pt[1], pt[2])
+        glEnd()
 
         show_scale(scale_origin, scale_size, scale_end)
             

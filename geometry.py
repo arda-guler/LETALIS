@@ -654,7 +654,8 @@ def generate_3D_old(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTan
 
     return vertices
 
-def generate_3D_blade(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth):
+def generate_3D_blade(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth,
+                      mdot_filmInject1, L_filmInject1, mdot_filmInject2, L_filmInject2):
     
     # simplify expressions for ease of coding
     a = L_cochanTangentialWidth
@@ -714,5 +715,55 @@ def generate_3D_blade(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanT
             theta += pi/n_verticesInnerHalfCircle
 
         vertices.append("NEWX")
+
+    if mdot_filmInject1:
+        vertices.append("INJECTION_UPSTREAM")
+        x = L_filmInject1
+
+        # find closest geom_x to the x given
+        closest_x = None
+        min_dist = max(geom_x) * 15
+        for crs_x in geom_x:
+            if (not closest_x) or (abs(crs_x - L_filmInject1) < min_dist):
+                closest_x = crs_x
+                min_dist = abs(crs_x - L_filmInject1)
+
+        idx_closest_x = geom_x.index(closest_x)
+        r = geom_y[idx_closest_x]
+
+        theta = 0
+        for i in range(int(n_cochan/2)):
+            theta2 = -theta + pi/2
+            y = r * math.sin(theta2)
+            z = r * math.cos(theta2)
+
+            vertices.append([x, y, z])
+            
+            theta += 2 * pi/n_cochan
+
+    if mdot_filmInject2:
+        vertices.append("INJECTION_DOWNSTREAM")
+        x = L_filmInject2
+
+        # find closest geom_x to the x given
+        closest_x = None
+        min_dist = max(geom_x) * 15
+        for crs_x in geom_x:
+            if (not closest_x) or (abs(crs_x - L_filmInject2) < min_dist):
+                closest_x = crs_x
+                min_dist = abs(crs_x - L_filmInject2)
+
+        idx_closest_x = geom_x.index(closest_x)
+        r = geom_y[idx_closest_x]
+
+        theta = 0
+        for i in range(int(n_cochan/2)):
+            theta2 = -theta + pi/2
+            y = r * math.sin(theta2)
+            z = r * math.cos(theta2)
+
+            vertices.append([x, y, z])
+            
+            theta += 2 * pi/n_cochan
     
     return vertices

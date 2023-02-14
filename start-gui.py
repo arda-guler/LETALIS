@@ -246,8 +246,10 @@ create_entry("Coolant Channel Tangential Width", length_units, "float")
 create_entry("Coolant Channel Radial Depth", length_units, "float")
 
 create_label("Film Cooling System (WIP!)")
-create_entry("Film Cooling Injection Point", length_units, "float")
-create_entry("Film Cooling Mass Flow", mass_flow_units, "float")
+create_entry("Film Cooling Injection Point 1", length_units, "float")
+create_entry("Film Cooling Mass Flow 1", mass_flow_units, "float")
+create_entry("Film Cooling Injection Point 2", length_units, "float")
+create_entry("Film Cooling Mass Flow 2", mass_flow_units, "float")
 
 create_label("Thrust Chamber Thermodynamics")
 create_entry("Combustion Chamber Mass Flow", mass_flow_units, "float")
