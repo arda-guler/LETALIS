@@ -248,6 +248,8 @@ def perform(params, config_filename=None, getchar=True):
     Q_outs = []
     xs = []
     cylinder_temps = []
+    cylinder_temps_out = []
+    cylinder_temps_in = []
     coolant_temps = []
     coolant_presses = []
     Reynolds = []
@@ -280,6 +282,8 @@ def perform(params, config_filename=None, getchar=True):
             Q_in_per_areas.append([])
             Q_outs.append([])
             cylinder_temps.append([])
+            cylinder_temps_out.append([])
+            cylinder_temps_in.append([])
             coolant_temps.append([])
             coolant_presses.append([])
             Reynolds.append([])
@@ -446,8 +450,8 @@ def perform(params, config_filename=None, getchar=True):
             if not cylinder_film_exists[i_cylinder_regen]: # no film cooling on this cylinder
 
                 T_effective = min(T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film) * 3, T_gas) # Archvile!
-                Q_in = h_g * (T_effective - cy.T) * cy.get_A_chm() * time_step
-                Q_in_per_area = h_g * (T_effective - cy.T) # W per m2 (this is only for plotting)
+                Q_in = h_g * (T_effective - (cy.T + cy.T_diff/2)) * cy.get_A_chm() * time_step
+                Q_in_per_area = h_g * (T_effective - (cy.T + cy.T_diff/2)) # W per m2 (this is only for plotting)
                 Q_in_full += Q_in
 
             else: # there is liquid film cooling on this cylinder
@@ -465,13 +469,14 @@ def perform(params, config_filename=None, getchar=True):
                 # compute heat absorption into regen cooling channels
                 #h_l = get_h_clt_kerosene(mtl_clt, T_clt_current, mdot_clt, D_hydro, cy)
                 h_l = get_h_clt_dittus_boelter(mtl_clt, T_clt, mdot_clt_current, D_hydro, cy)
-                Q_out = h_l * (cy.T - T_clt_current) * cy.get_A_clt() * time_step
+                Q_out = h_l * ((cy.T - cy.T_diff/2) - T_clt_current) * cy.get_A_clt() * time_step
                 Q_out_full += Q_out
 
                 # increase cylinder temp
                 Q_net = Q_in - Q_out
                 dT = Q_net/cy.get_heat_capacity()
                 cy.T += dT
+                cy.T_diff = Q_net * cy.get_thermal_resistance() / time_step
 
                 # increase coolant fluid temp.
                 clt_vel = mdot_clt_current / (mtl_clt.get_density(T_clt_current) * cy.A_cochan_flow)
@@ -538,6 +543,8 @@ def perform(params, config_filename=None, getchar=True):
                 Q_in_per_areas[j].insert(0, Q_in_per_area)
                 Q_outs[j].insert(0, Q_out/time_step) # convert to W
                 cylinder_temps[j].insert(0, cy.T - 273) # convert to celcius
+                cylinder_temps_out[j].insert(0, cy.T - cy.T_diff/2 - 273) # convert to celcius
+                cylinder_temps_in[j].insert(0, cy.T + cy.T_diff/2 - 273) # convert to celcius
                 coolant_temps[j].insert(0, T_clt_current - 273) # convert to celcius
                 coolant_presses[j].insert(0, P_clt_current)
                 Reynolds[j].insert(0, Reynolds_num)
@@ -566,8 +573,8 @@ def perform(params, config_filename=None, getchar=True):
             print("Current analysis:")
             print(generate_progress_bar((t_step/n_steps) * 100))
 
-    plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts,
-              T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
+    plot_data(time_step, xs, cylinder_temps, cylinder_temps_out, cylinder_temps_in, coolant_temps, coolant_presses, Q_ins,
+              Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
               L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
               total_clt_press_drops, vis_model, config_filename)

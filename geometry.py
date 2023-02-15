@@ -33,6 +33,7 @@ class cylinder:
         
         self.mtl = mtl # material
         self.T = T_init # temperature
+        self.T_diff = 0 # inner - outer wall temperature difference
         self.Mach = M # flow mach number at cylinder position
 
         self.A_chm = get_sector_face_area(r_in, 360, h) # area facing chamber (m2)
@@ -68,6 +69,9 @@ class cylinder:
 
     def get_heat_capacity(self):
         return self.get_spec_heat() * self.get_m()
+
+    def get_thermal_resistance(self):
+        return self.thickness / (self.mtl.get_thermal_conductivity(self.T) * self.A_chm)
 
 # calculate_geometry() calculates the whole geometry all at once and show it
 # to the user so that they can see if there are any problems with the mathematical model.

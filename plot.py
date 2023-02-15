@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import shutil
 
-def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases,
-              h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
-              flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
-              L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
-              total_clt_press_drops, vis_model, filename=None):
+def plot_data(time_step, xs, cylinder_temps, cylinder_temps_out, cylinder_temps_in, coolant_temps, coolant_presses,
+              Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls,
+              geom_x, geom_y, flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width,
+              L_min_chan_width, L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives,
+              coolant_press_drops, total_clt_press_drops, vis_model, filename=None):
 
     # stop max. number of figures warning (because death to your RAM, that's why!)
     plt.rcParams.update({'figure.max_open_warning': 0})
@@ -57,6 +57,25 @@ def plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_i
 
     plt.grid()
     plt.title("Wall Temperature")
+    ax.set_xlabel("Position (m)")
+    ax2.set_ylabel("Temperature (C)")
+
+    # WALL OUTER - INNER TEMP. PLOT (FOR THE LAST FRAME)
+    _, ax = plt.subplots()
+    plotnum += 1
+    plt.figure(plotnum)
+
+    ax2 = ax.twinx()
+    plot_engine_contour(ax)
+    ax2.set_aspect("auto")
+    ax2.yaxis.set_label_position("left")
+    ax2.yaxis.tick_left()
+    
+    ax2.plot(xs, cylinder_temps_out[-1], color=(0,0,1))
+    ax2.plot(xs, cylinder_temps_in[-1], color=(1,0,0))
+
+    plt.grid()
+    plt.title("Inner & Outer Wall Surface Temperatures")
     ax.set_xlabel("Position (m)")
     ax2.set_ylabel("Temperature (C)")
     
