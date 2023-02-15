@@ -332,7 +332,8 @@ def perform(params, config_filename=None, getchar=True):
             xd1 = cy.x - L_filmInject1
             xd2 = cy.x - L_filmInject2
             Hs = 0.025 * cy.r_in
-            Kt = 0.05 * 10**(-2)
+            Kt = 0.12 * 10**(-2) # coefficient for intensity of turbulent mixing
+            # every time you adjust this parameter, a kitten dies.
 
             # calculate flow temperature at point
             T_gas = (1 + (gamma-1)/2 * M**2)**(-1) * T_c
@@ -385,25 +386,27 @@ def perform(params, config_filename=None, getchar=True):
                             mdot_film_current = 0
 
                             if cy.x >= L_filmInject1 and cy.x < L_filmInject2:
-                                mbar_f = mdot_filmInject1 / mdot_chamber
+                                mbar_f = mdot_filmInject1 / (mdot_chamber + mdot_filmInject1)
                                 A_surface_layer = pi * cy.r_in**2 - pi * (cy.r_in - Hs)**2
                                 mdot_surface_layer = (A_surface_layer/(pi * cy.r_in**2)) * mdot_chamber
-                                mbar_s = mdot_surface_layer / mdot_chamber
+                                mbar_s = mdot_surface_layer / (mdot_chamber + mdot_filmInject1)
                                 x_squared = xd1/Hs
                                 bigM = Kt * (mbar_s/mbar_f)
                                 xeta = 1 - euler**(-x_squared * bigM)
-                                T_layer = (T_film + xeta * (T_c - T_film)) 
+                                T_layer = T_film * (1-xeta) + T_film * xeta
+                                #T_layer = (T_film + xeta * (T_c - T_film)) 
                                 rT_layers[i_cylinder_film] = xeta
 
                             elif cy.x >= L_filmInject2 and cy.x >= L_filmInject2:
-                                mbar_f = (mdot_filmInject1 + mdot_filmInject2) / mdot_chamber
+                                mbar_f = (mdot_filmInject1 + mdot_filmInject2) / (mdot_chamber + mdot_filmInject1 + mdot_filmInject2)
                                 A_surface_layer = pi * cy.r_in**2 - pi * (cy.r_in - Hs)**2
                                 mdot_surface_layer = (A_surface_layer/(pi * cy.r_in**2)) * mdot_chamber
-                                mbar_s = mdot_surface_layer / mdot_chamber
+                                mbar_s = mdot_surface_layer / (mdot_chamber + mdot_filmInject1 + mdot_filmInject2)
                                 x_squared = xd2/Hs
                                 bigM = Kt * (mbar_s/mbar_f)
                                 xeta = 1 - euler**(-x_squared * bigM)
-                                T_layer = (T_film + xeta * (T_c - T_film)) 
+                                T_layer = T_film * (1-xeta) + T_film * xeta
+                                #T_layer = (T_film + xeta * (T_c - T_film)) 
                                 rT_layers[i_cylinder_film] = xeta
 
             if t_step % 100 == 0:
@@ -449,7 +452,7 @@ def perform(params, config_filename=None, getchar=True):
 
             if not cylinder_film_exists[i_cylinder_regen]: # no film cooling on this cylinder
 
-                T_effective = min(T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film) * 3, T_gas) # Archvile!
+                T_effective = min(T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film), T_gas)
                 Q_in = h_g * (T_effective - (cy.T + cy.T_diff/2)) * cy.get_A_chm() * time_step
                 Q_in_per_area = h_g * (T_effective - (cy.T + cy.T_diff/2)) # W per m2 (this is only for plotting)
                 Q_in_full += Q_in
