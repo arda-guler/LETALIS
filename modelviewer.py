@@ -104,30 +104,48 @@ def import_model():
     x_index = 0
     outer = 0
 
+    injections = False
+    injection_vertices = []
     for line in import_lines:
-        
-        if line == "OUTERSHELL\n":
-            outer = 1
 
-        elif line == "NEWX\n":
-            axials.append([[],[]])
-            x_index += 1
-            outer = 0
-            
+        if not injections:
+            if line == "OUTERSHELL\n":
+                outer = 1
+
+            elif line == "NEWX\n":
+                axials.append([[],[]])
+                x_index += 1
+                outer = 0
+
+            elif line == "INJECTION_UPSTREAM\n" or line == "INJECTION_DOWNSTREAM\n":
+                injections = True
+                
+            else:
+                line = line[1:-2]
+                line = line.split(",")
+                x = float(line[0])
+                y = float(line[1])
+                z = float(line[2])
+
+                axials[x_index][outer].append([x, y, z])
+
         else:
-            line = line[1:-2]
-            line = line.split(",")
-            x = float(line[0])
-            y = float(line[1])
-            z = float(line[2])
+            if line == "INJECTION_UPSTREAM\n" or line == "INJECTION_DOWNSTREAM\n":
+                pass
+            else:
+                line = line[1:-2]
+                line = line.split(",")
+                x = float(line[0])
+                y = float(line[1])
+                z = float(line[2])
 
-            axials[x_index][outer].append([x, y, z])
+                injection_vertices.append([x, y, z])
 
-    return axials
+    return axials, injection_vertices
 
 def main():
     print("Reading 3D model...")
-    model_data = import_model()
+    model_data, injection_vertices = import_model()
 
     window_x = 1000
     window_y = 600
@@ -145,11 +163,14 @@ def main():
     gluPerspective(fov, window_ratio, near_clip, far_clip)
     glEnable(GL_CULL_FACE)
     glPolygonMode(GL_FRONT_AND_BACK, GL_POINT)
+    glPointSize(5)
 
     main_cam = camera([0,0,0], [[1,0,0],[0,1,0],[0,0,1]])
 
     show_inner = True
     show_outer = True
+    draw_inner_axial = True
+    draw_outer_axial = False
     detail_dx = 15
 
     x_end = model_data[-2][0][0][0]
@@ -172,6 +193,8 @@ def main():
     print("X, C to show or hide inner wall")
     print("V, B to show or hide channel geometry")
     print("9, 0 to increase/decrease radial detail")
+    print("4, 5 to hide/show inner wall axial lines")
+    print("6, 7 to hide/show outer wall axial lines")
     
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -282,16 +305,27 @@ def main():
 
         if keyboard.is_pressed("z"):
             show_inner = False
-        if keyboard.is_pressed("x"):
+        elif keyboard.is_pressed("x"):
             show_inner = True
+            
         if keyboard.is_pressed("c"):
             show_outer = False
-        if keyboard.is_pressed("v"):
+        elif keyboard.is_pressed("v"):
             show_outer = True
+            
+        if keyboard.is_pressed("4"):
+            draw_inner_axial = False
+        elif keyboard.is_pressed("5"):
+            draw_inner_axial = True
+            
+        if keyboard.is_pressed("6"):
+            draw_outer_axial = False
+        elif keyboard.is_pressed("7"):
+            draw_outer_axial = True
 
         if keyboard.is_pressed("9") and detail_dx > 1:
             detail_dx -= 1
-        if keyboard.is_pressed("0") and detail_dx < 100:
+        elif keyboard.is_pressed("0") and detail_dx < 100:
             detail_dx += 1
             
         # rendering
@@ -299,7 +333,7 @@ def main():
         
         for axial in model_data[::10]:
 
-            # radial draw
+            # tangential draw
             if show_inner:
                 glColor(0.8, 0.8, 0.2)
                 # inner wall vertices
@@ -321,12 +355,14 @@ def main():
                 glPopMatrix()
 
         rad_index = 0
+        rad_index2 = 0
         
         # axial draw
         glPushMatrix()
-        while rad_index < n_angular:
 
-            if show_inner:
+        if show_inner and draw_inner_axial:
+            while rad_index < n_angular:
+
                 glColor(0.8, 0.8, 0.2)
                 glBegin(GL_LINE_STRIP)
                 ax_index = 0
@@ -336,21 +372,32 @@ def main():
                     ax_index += int(len(model_data) * detail_dx/200)
                     
                 glEnd()
+            
+                rad_index += max(int(n_angular / 50), 1)
 
-            if show_outer:
+        if show_outer and draw_outer_axial:
+            while rad_index2 < len(model_data[0][1]) - 1:
+            
                 glColor(0.2, 0.8, 0.8)
                 glBegin(GL_LINE_STRIP)
                 ax_index = 0
                 
                 while ax_index < len(model_data) - 1:
-                    glVertex3f(model_data[ax_index][1][rad_index][0], model_data[ax_index][1][rad_index][1], model_data[ax_index][1][rad_index][2])
+                    glVertex3f(model_data[ax_index][1][rad_index2][0], model_data[ax_index][1][rad_index2][1], model_data[ax_index][1][rad_index2][2])
                     ax_index += int(len(model_data) * detail_dx/200)
                     
                 glEnd()
-            
-            rad_index += int(n_angular/50)
-        
+
+                rad_index2 += 1
+
         glPopMatrix()
+
+        # injection points
+        glColor(0.8, 0.2, 0.8)
+        glBegin(GL_POINTS)
+        for pt in injection_vertices:
+            glVertex3f(pt[0], pt[1], pt[2])
+        glEnd()
 
         show_scale(scale_origin, scale_size, scale_end)
             

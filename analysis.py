@@ -119,46 +119,49 @@ def perform(params, config_filename=None, getchar=True):
 
     n_cochan = params[13] # number of coolant channels
     L_cochanInnerWallDist = params[14] # m
-    L_cochanSideWall = params[15] # m
+    L_cochanTangentialWidth = params[15] # m
     L_cochanDepth = params[16] # m
 
-    L_filmInject = params[17] # m
-    mdot_filmInject = params[18] # m
+    L_filmInject1 = params[17] # m
+    mdot_filmInject1 = params[18] # m
+
+    L_filmInject2 = params[19] # m
+    mdot_filmInject2 = params[20] # m
 
     # - - - COMBUSTION / CEA - - -
     D_star = D_thrt # m
-    mdot_chamber = params[19] # kg s-1
-    P_c = params[20] # Pa
+    mdot_chamber = params[21] # kg s-1
+    P_c = params[22] # Pa
     r_c = ROC_thrtDn # m
-    T_c = params[21] # K
-    c_star = params[22] # m/s, CEA
-    gasConductivity = params[23] # W m-1 K-1, CEA
-    avgMolecularMass = params[24] # g mol-1
+    T_c = params[23] # K
+    c_star = params[24] # m/s, CEA
+    gasConductivity = params[25] # W m-1 K-1, CEA
+    avgMolecularMass = params[26] # g mol-1
 
-    T_w = params[25] # K, wall temp
+    T_w = params[27] # K, wall temp
 
     # - - - COMBUSTION CHAMBER INPUTS - - -
-    visc_chm = params[26] # millipoise, CEA
-    gamma_chm = params[27] # CEA
+    visc_chm = params[28] # millipoise, CEA
+    gamma_chm = params[29] # CEA
 
     # - - - THROAT INPUTS - - -
-    visc_thrt = params[28] # millipoise, CEA
-    gamma_thrt = params[29] # CEA
+    visc_thrt = params[30] # millipoise, CEA
+    gamma_thrt = params[31] # CEA
 
     # - - - MATERIALS - - -
-    mtl_innerWall = get_material_by_name(params[30])
-    mtl_outerShell = get_material_by_name(params[31])
+    mtl_innerWall = get_material_by_name(params[32])
+    mtl_outerShell = get_material_by_name(params[33])
 
     # - - - COOLANT - - -
-    mtl_clt = get_material_by_name(params[32])
-    mdot_clt = params[33]/n_cochan # kg s-1 (per channel)
-    T_clt = params[34] # manifold coolant temp. K
-    P_clt = params[35] # manifold coolant press. Pa
+    mtl_clt = get_material_by_name(params[34])
+    mdot_clt = params[35]/n_cochan # kg s-1 (per channel)
+    T_clt = params[36] # manifold coolant temp. K
+    P_clt = params[37] # manifold coolant press. Pa
 
     # - - - ANALYSIS - - -
-    fineness_vertical = params[36]
-    time_end = params[37] # s
-    time_step = params[38] # s
+    fineness_vertical = params[38]
+    time_end = params[39] # s
+    time_step = params[40] # s
     n_steps = int(time_end/time_step)
 
     # calculate engine geometry
@@ -171,7 +174,8 @@ def perform(params, config_filename=None, getchar=True):
 
     # generate 3D object
     print("\nGenerating 3D model...")
-    vis_model = generate_3D(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanSideWall, L_cochanDepth)
+    vis_model = generate_3D_blade(geom_x, geom_y, n_cochan, L_cochanInnerWallDist, L_cochanTangentialWidth, L_cochanDepth,
+                                  mdot_filmInject1, L_filmInject1, mdot_filmInject2, L_filmInject2)
 
     # calculate Mach distribution
     print("Calculating Mach distribution...")
@@ -194,9 +198,10 @@ def perform(params, config_filename=None, getchar=True):
             r_in = get_inner_radius_at(x, L_engine, D_chm, D_thrt, D_exit, a_chmContract, ROC_chm, a_nzlExp, ROC_thrtDn, ROC_thrtUp)
             r_clt = r_in + L_cochanInnerWallDist
             r_out = r_clt + L_cochanDepth
-            a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
+            a_clt = L_cochanTangentialWidth
+            b_clt = L_cochanDepth
             Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
-            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
+            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, b_clt, mtl_innerWall, T_w, Mach, r_prev)
             cylinders.append(new_cylinder)
             m_engine += new_cylinder.get_m()
 
@@ -207,9 +212,10 @@ def perform(params, config_filename=None, getchar=True):
             r_in = get_inner_radius_at_bell(x, L_engine, D_chm, D_thrt, D_exit, ROC_chm, a_chmContract, percentLength_nzl, theta_n_nzl, theta_e_nzl)
             r_clt = r_in + L_cochanInnerWallDist
             r_out = r_clt + L_cochanDepth
-            a_clt = (360/n_cochan) - (360 * L_cochanSideWall)/(2 * pi * r_clt)
+            a_clt = L_cochanTangentialWidth
+            b_clt = L_cochanDepth
             Mach = get_mach_num_at(x, subsonic_M, subsonic_x, supersonic_M, supersonic_x, engine_lengths)
-            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, mtl_innerWall, T_w, Mach, r_prev)
+            new_cylinder = cylinder(x, r_in, r_out, x_step, n_cochan, r_clt, a_clt, b_clt, mtl_innerWall, T_w, Mach, r_prev)
             cylinders.append(new_cylinder)
             m_engine += new_cylinder.get_m()
 
@@ -242,6 +248,8 @@ def perform(params, config_filename=None, getchar=True):
     Q_outs = []
     xs = []
     cylinder_temps = []
+    cylinder_temps_out = []
+    cylinder_temps_in = []
     coolant_temps = []
     coolant_presses = []
     Reynolds = []
@@ -274,6 +282,8 @@ def perform(params, config_filename=None, getchar=True):
             Q_in_per_areas.append([])
             Q_outs.append([])
             cylinder_temps.append([])
+            cylinder_temps_out.append([])
+            cylinder_temps_in.append([])
             coolant_temps.append([])
             coolant_presses.append([])
             Reynolds.append([])
@@ -291,25 +301,26 @@ def perform(params, config_filename=None, getchar=True):
 
         T_clt_current = T_clt # revert to manifold temperature
         P_clt_current = P_clt # revert to manifold pressure
-        film_exists = False
         mdot_clt_current = mdot_clt # revert to manifold mass flow
 
+        film_exists1 = False
+        film_exists2 = False
         cylinder_film_exists = [False] * len(cylinders)
-        rT_layers = [1] * len(cylinders)
-        T_aw = 0
+        rT_layers = [1] * len(cylinders) # T_film/T_gas ratio
+        T_aw = 0 # adiabatic wall temp.
 
         i_cylinder_film = -1
-        mdot_film_current = mdot_filmInject
+        mdot_film_current = mdot_filmInject1
         # loop forwards when computing film cooling
         for cy in cylinders:
             i_cylinder_film += 1
 
-            if cy.x < engine_lengths[4]:
+            if cy.x < engine_lengths[4]: # before throat
                 vis = visc_chm
                 gamma = gamma_chm
                 Cp = Cp_chm
                 Pr = Pr_chm
-            else:
+            else: # after throat
                 vis = visc_thrt
                 gamma = gamma_thrt
                 Cp = Cp_thrt
@@ -318,14 +329,11 @@ def perform(params, config_filename=None, getchar=True):
             M = cy.get_Mach()
             A = pi * cy.r_in**2
 
-            xd = cy.x - L_filmInject
-            Hs = 0.025
-            Kt = 0.05 * 10**(-2)
-            r_full = cy.r_in
-            r_surf = cy.r_in - cy.r_in * Hs
-            
-            mf0 = mdot_filmInject # surface layer film flow
-            ms0 = mdot_chamber * (pi * (r_full**2 - r_surf**2)/A) # surface layer gas flow
+            xd1 = cy.x - L_filmInject1
+            xd2 = cy.x - L_filmInject2
+            Hs = 0.025 * cy.r_in
+            Kt = 0.12 * 10**(-2) # coefficient for intensity of turbulent mixing
+            # every time you adjust this parameter, a kitten dies.
 
             # calculate flow temperature at point
             T_gas = (1 + (gamma-1)/2 * M**2)**(-1) * T_c
@@ -333,47 +341,79 @@ def perform(params, config_filename=None, getchar=True):
             # calculate heat transfer coeff
             h_g = get_convection_coeff(D_star, vis, Cp, Pr, P_c, c_star, r_c, A_star, A, gamma, M, T_film, T_c)
 
-            # film cooling starts here
-            if not film_exists and cy.x >= L_filmInject:
-                film_exists = True
-                mdot_clt_current = mdot_clt - mdot_filmInject/n_cochan
-                mdot_film_current = mdot_filmInject
-                ms = ms0
-                mf = mf0
-                
-            # there is film cooling!
-            if mdot_filmInject > 0 and cy.x >= L_filmInject and mdot_film_current >= 0: # TODO: add this to material properties 
-                stability_coeff = 0.6 # how do you even get this
-                dT_film = ( h_g * (T_gas - T_film) * cy.get_A_chm() )
-                dT_film *= (stability_coeff * mdot_filmInject * mtl_clt.get_specific_heat(T_film))**(-1)
+            if mdot_filmInject1:
+                # no film yet
+                if cy.x < L_filmInject1:
+                    film_exists1 = False
+                    film_exists2 = False
 
-                if T_film + dT_film < 600: # TODO: add this to material properties 
-                    T_film += dT_film # increase film temperature
-                    cylinder_film_exists[i_cylinder_film] = True
+                # first injection here
+                if not film_exists1 and cy.x >= L_filmInject1:
+                    film_exists1 = True
+                    mdot_clt_current = mdot_clt - (mdot_filmInject1 / n_cochan)
+                    mdot_film_current = mdot_filmInject1
 
-                else: # check vaporization
-                    dmdot_film = ( h_g * (T_gas - T_film) * cy.get_A_chm() ) / mtl_clt.get_heat_of_vaporization(T_film)
+                # second injection here
+                if not film_exists2 and cy.x >= L_filmInject2:
+                    film_exists2 = True
+                    mdot_clt_current -= (mdot_filmInject2 / n_cochan)
+                    mdot_film_current += mdot_filmInject2
 
-                    if mdot_film_current - dmdot_film > 0: # still not completely vaporized
-                        mdot_film_current -= dmdot_film
+                if cy.x >= L_filmInject1 and mdot_film_current >= 0:
+                    
+                    mdot_totalFilm = mdot_filmInject1
+                        
+                    if cy.x >= L_filmInject2:
+                        mdot_totalFilm += mdot_filmInject2
+                        
+                    stability_coeff = 0.6
+                    dT_film = ( h_g * (T_gas - T_film) * cy.get_A_chm() )
+                    dT_film *= (stability_coeff * mdot_totalFilm * mtl_clt.get_specific_heat(T_film))**(-1)
+
+                    if T_film + dT_film < 600: # TODO: add this to material properties 
+                        T_film += dT_film # increase film temperature
                         cylinder_film_exists[i_cylinder_film] = True
 
-                    else: # liquid film has completely vaporized (and is now in gas form)
-                        cylinder_film_exists[i_cylinder_film] = False
-                        mdot_film_current = 0
+                    else: # check vaporization
+                        dmdot_film = ( h_g * (T_gas - T_film) * cy.get_A_chm() ) / mtl_clt.get_heat_of_vaporization(T_film)
 
-                        bigM = Kt * ms / mf
-                        xbarsquared = x / Hs
-                        xeta = 1 - euler**(-bigM * xbarsquared)
-                        ms = ms0 * (1-xeta/2) + mf0 * xeta/2
-                        mf = ms0 * xeta/2 + mf0 * (1-xeta/2)
-                        T_layer = T_film + xeta * (T_c - T_film)
-                        rT_layers[i_cylinder_film] = xeta * 20 # There is an archvile!
+                        if mdot_film_current - dmdot_film > 0: # still not completely vaporized
+                            mdot_film_current -= dmdot_film
+                            cylinder_film_exists[i_cylinder_film] = True
+
+                        else: # liquid film has completely vaporized (and is now in gas form)
+                            cylinder_film_exists[i_cylinder_film] = False
+                            mdot_film_current = 0
+
+                            if cy.x >= L_filmInject1 and cy.x < L_filmInject2:
+                                mbar_f = mdot_filmInject1 / (mdot_chamber + mdot_filmInject1)
+                                A_surface_layer = pi * cy.r_in**2 - pi * (cy.r_in - Hs)**2
+                                mdot_surface_layer = (A_surface_layer/(pi * cy.r_in**2)) * mdot_chamber
+                                mbar_s = mdot_surface_layer / (mdot_chamber + mdot_filmInject1)
+                                x_squared = xd1/Hs
+                                bigM = Kt * (mbar_s/mbar_f)
+                                xeta = 1 - euler**(-x_squared * bigM)
+                                T_layer = T_film * (1-xeta) + T_film * xeta
+                                #T_layer = (T_film + xeta * (T_c - T_film)) 
+                                rT_layers[i_cylinder_film] = xeta
+
+                            elif cy.x >= L_filmInject2 and cy.x >= L_filmInject2:
+                                mbar_f = (mdot_filmInject1 + mdot_filmInject2) / (mdot_chamber + mdot_filmInject1 + mdot_filmInject2)
+                                A_surface_layer = pi * cy.r_in**2 - pi * (cy.r_in - Hs)**2
+                                mdot_surface_layer = (A_surface_layer/(pi * cy.r_in**2)) * mdot_chamber
+                                mbar_s = mdot_surface_layer / (mdot_chamber + mdot_filmInject1 + mdot_filmInject2)
+                                x_squared = xd2/Hs
+                                bigM = Kt * (mbar_s/mbar_f)
+                                xeta = 1 - euler**(-x_squared * bigM)
+                                T_layer = T_film * (1-xeta) + T_film * xeta
+                                #T_layer = (T_film + xeta * (T_c - T_film)) 
+                                rT_layers[i_cylinder_film] = xeta
 
             if t_step % 100 == 0:
                 T_films[j].append(T_film)
 
-        film_inject_point = False  
+        film_inject_point1 = False
+        film_inject_point2 = False
         i_cylinder_regen = len(cylinders)
         # loop backwards when computing cylinder heat transfer (go from manifold to injector face)
         for cy in cylinders[::-1]:
@@ -400,16 +440,21 @@ def perform(params, config_filename=None, getchar=True):
             h_g = get_convection_coeff(D_star, vis, Cp, Pr, P_c, c_star, r_c, A_star, A, gamma, M, cy.T, T_c)
 
             # get film cooling injection point temperature
-            if not film_inject_point and cy.x <= L_filmInject:
-                film_inject_point = True
+            if not film_inject_point1 and cy.x <= L_filmInject1:
+                film_inject_point1 = True
                 T_film = T_clt_current
-                mdot_clt_current -= mdot_filmInject/n_cochan
+                mdot_clt_current -= mdot_filmInject1/n_cochan
+
+            if not film_inject_point2 and cy.x <= L_filmInject2:
+                film_inject_point2 = True
+                T_film = T_clt_current
+                mdot_clt_current -= mdot_filmInject2/n_cochan
 
             if not cylinder_film_exists[i_cylinder_regen]: # no film cooling on this cylinder
 
-                T_effective = T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film)
-                Q_in = h_g * (T_effective - cy.T) * cy.get_A_chm() * time_step
-                Q_in_per_area = h_g * (T_effective - cy.T) # W per m2 (this is only for plotting)
+                T_effective = min(T_film + rT_layers[i_cylinder_regen] * (T_gas - T_film), T_gas)
+                Q_in = h_g * (T_effective - (cy.T + cy.T_diff/2)) * cy.get_A_chm() * time_step
+                Q_in_per_area = h_g * (T_effective - (cy.T + cy.T_diff/2)) # W per m2 (this is only for plotting)
                 Q_in_full += Q_in
 
             else: # there is liquid film cooling on this cylinder
@@ -418,7 +463,7 @@ def perform(params, config_filename=None, getchar=True):
 
             # compute Reynold's number
             # https://en.wikipedia.org/wiki/Hydraulic_diameter
-            wet_perimeter = (2 * pi * cy.r_clt) * (cy.a_clt/360) + (2 * pi * cy.r_out) * (cy.a_clt/360) + 2 * L_cochanDepth
+            wet_perimeter = cy.a_clt + 2 * cy.b_clt
             flow_area = cy.A_cochan_flow
             D_hydro = 4 * (flow_area / wet_perimeter)
             Reynolds_num = (mdot_clt_current * D_hydro) / (mtl_clt.get_viscosity(T_clt_current) * cy.A_cochan_flow)
@@ -427,13 +472,14 @@ def perform(params, config_filename=None, getchar=True):
                 # compute heat absorption into regen cooling channels
                 #h_l = get_h_clt_kerosene(mtl_clt, T_clt_current, mdot_clt, D_hydro, cy)
                 h_l = get_h_clt_dittus_boelter(mtl_clt, T_clt, mdot_clt_current, D_hydro, cy)
-                Q_out = h_l * (cy.T - T_clt_current) * cy.get_A_clt() * time_step
+                Q_out = h_l * ((cy.T - cy.T_diff/2) - T_clt_current) * cy.get_A_clt() * time_step
                 Q_out_full += Q_out
 
                 # increase cylinder temp
                 Q_net = Q_in - Q_out
                 dT = Q_net/cy.get_heat_capacity()
                 cy.T += dT
+                cy.T_diff = Q_net * cy.get_thermal_resistance() / time_step
 
                 # increase coolant fluid temp.
                 clt_vel = mdot_clt_current / (mtl_clt.get_density(T_clt_current) * cy.A_cochan_flow)
@@ -474,6 +520,18 @@ def perform(params, config_filename=None, getchar=True):
                 Pr_clt = 0
                 Nusselt_num = 0
                 coolant_press_drop = 0
+
+            # axial conduction of heat (positive direction is from nozzle exit towards injector face)
+            if cylinders.index(cy) - 1 >= 0:
+                cy_upper = cylinders[cylinders.index(cy) - 1]
+                A_axial = get_area_of_sector(cy.r_in, cy.r_out, 360) - (cy.A_cochan_flow * n_cochan)
+                k_axial = cy.mtl.get_thermal_conductivity(cy.T)
+                dx_axial = cy.h
+                dT_axial = cy.T - cy_upper.T
+                #print(A_axial, k_axial, dx_axial, dT_axial)
+                Q_axial = (k_axial * A_axial * dT_axial / dx_axial) * time_step
+                cy.T -= Q_axial/cy.get_heat_capacity()
+                cy_upper.T += Q_axial/cy.get_heat_capacity()
                 
             # record data for plotting
             if t_step == 0:
@@ -488,6 +546,8 @@ def perform(params, config_filename=None, getchar=True):
                 Q_in_per_areas[j].insert(0, Q_in_per_area)
                 Q_outs[j].insert(0, Q_out/time_step) # convert to W
                 cylinder_temps[j].insert(0, cy.T - 273) # convert to celcius
+                cylinder_temps_out[j].insert(0, cy.T - cy.T_diff/2 - 273) # convert to celcius
+                cylinder_temps_in[j].insert(0, cy.T + cy.T_diff/2 - 273) # convert to celcius
                 coolant_temps[j].insert(0, T_clt_current - 273) # convert to celcius
                 coolant_presses[j].insert(0, P_clt_current)
                 Reynolds[j].insert(0, Reynolds_num)
@@ -516,11 +576,11 @@ def perform(params, config_filename=None, getchar=True):
             print("Current analysis:")
             print(generate_progress_bar((t_step/n_steps) * 100))
 
-    plot_data(time_step, xs, cylinder_temps, coolant_temps, coolant_presses, Q_ins, Q_in_per_areas, Q_outs, Reynolds, Nusselts,
-              T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
+    plot_data(time_step, xs, cylinder_temps, cylinder_temps_out, cylinder_temps_in, coolant_temps, coolant_presses, Q_ins,
+              Q_in_per_areas, Q_outs, Reynolds, Nusselts, T_gases, h_gs, h_ls, clt_vels, Q_in_fulls, Q_out_fulls, geom_x, geom_y,
               flow_areas, wet_perimeters, D_hydros, m_engine, L_skirt_chan_width, L_chamber_chan_width, L_min_chan_width,
-              L_max_chan_width, engine_lengths, vis_model, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
-              total_clt_press_drops, config_filename)
+              L_max_chan_width, engine_lengths, mdot_clts, T_films, rT_layers_plot, T_effectives, coolant_press_drops,
+              total_clt_press_drops, vis_model, config_filename)
 
     if getchar:
         qc = input("Press Enter to move on...")
